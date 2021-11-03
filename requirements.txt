@@ -1,2 +1,2 @@
-google-cloud-biqquery
+google-cloud-bigquery
 pysta
