@@ -1,2 +1,2 @@
 google-cloud-bigquery
-pysta>=0.0.7
+pysta==0.0.8
