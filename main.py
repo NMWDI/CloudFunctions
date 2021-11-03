@@ -69,7 +69,10 @@ def nmbgmr_locations_things(request):
 
     # previous_max_objectid = get_prev(context, 'nmbgmr-etl')
     request_json = request.get_json()
-    previous_max_objectid = request_json['objectid']
+    previous_max_objectid = None
+    if request_json:
+        previous_max_objectid = request_json['objectid']
+
     if previous_max_objectid:
         sql = f'{sql} where OBJECTID>%(leftbounds)s'
 
@@ -77,83 +80,83 @@ def nmbgmr_locations_things(request):
 
     sql = f'{sql} order by OBJECTID LIMIT {limit}'
     params = {'leftbounds': previous_max_objectid}
-
-    client = bigquery.Client()
-    # conn = bq.get_conn()
-    # client = conn.client()
-    st = time.time()
-    screens = make_screens(client, previous_max_objectid)
-    logging.info(f'got screens {len(screens)} {time.time() - st}')
-
-    total_records = make_total_records(client, dataset, table_name)
-    logging.info(f'total records={total_records}, limit={limit}')
-    # data = client.fetchall()
-    if limit > total_records:
-        logging.info('doing a complete overwrite')
-
-    stac = make_sta_client()
-    # client.execute(sql, params)
-    qj = client.query(sql, params)
-    fetched_any = False
-    gst = time.time()
-    cnt = 0
-
-    for record in qj.result():
-
-    # while 1:
-        # record = client.fetchone()
-        # if not record:
-        #     break
-
-        fetched_any = True
-        record = dict(zip(fields, record))
-        logging.info(record)
-        properties = {k: record[k] for k in ('Altitude', 'AltDatum')}
-        properties['agency'] = 'NMBGMR'
-        properties['source_id'] = record['OBJECTID']
-        properties['PointID'] = record['PointID']
-        properties['WellID'] = record['WellID']
-        name = record['PointID'].upper()
-        description = 'Location of well where measurements are made'
-        e = record['Easting']
-        n = record['Northing']
-        z = 13
-        # logging.info(f'PointID={name}, Easting={e},Northing={n}')
-        st = time.time()
-        lid, added = stac.put_location(name, description, properties, utm=(e, n, z))
-        logging.info(f'added location {lid} {time.time() - st}')
-        properties['geoconnex'] = f'https://geoconnex.us/nmwdi/st/locations/{lid}'
-
-        stac.patch_location(lid, {'properties': properties})
-
-        name = 'Water Well'
-        description = 'Well drilled or set into subsurface for the purposes ' \
-                      'of pumping water or monitoring groundwater'
-
-        properties = {'WellDepth': record['WellDepth'],
-                      'GeologicFormation': record['FormationZone'],
-                      'Use': record['CurrentUseDescription'],
-                      'Status': record['StatusDescription'],
-                      'Screens': screens.get(record['PointID'], []),
-                      'agency': 'NMBGMR',
-                      'PointID': record['PointID'],
-                      'WellID': record['WellID'],
-                      'source_id': record['OBJECTID']}
-        # logging.info(f'Add thing to {lid}')
-        st = time.time()
-        stac.put_thing(name, description, properties, lid)
-        logging.info(f'added thing to {lid} {time.time() - st}')
-        previous_max_objectid = record['OBJECTID']
-        cnt += 1
-
-    t = time.time() - gst
-    logging.info(f'total upload time={t} n={cnt} avg={cnt / t}')
-
-    if not fetched_any or cnt >= total_records:
-        # start back at begin to reexamine sites
-        previous_max_objectid = 0
-
-    return previous_max_objectid
+    return f'Going to execute {sql}, params={params}'
+    # client = bigquery.Client()
+    # # conn = bq.get_conn()
+    # # client = conn.client()
+    # st = time.time()
+    # screens = make_screens(client, previous_max_objectid)
+    # logging.info(f'got screens {len(screens)} {time.time() - st}')
+    #
+    # total_records = make_total_records(client, dataset, table_name)
+    # logging.info(f'total records={total_records}, limit={limit}')
+    # # data = client.fetchall()
+    # if limit > total_records:
+    #     logging.info('doing a complete overwrite')
+    #
+    # stac = make_sta_client()
+    # # client.execute(sql, params)
+    # qj = client.query(sql, params)
+    # fetched_any = False
+    # gst = time.time()
+    # cnt = 0
+    #
+    # for record in qj.result():
+    #
+    # # while 1:
+    #     # record = client.fetchone()
+    #     # if not record:
+    #     #     break
+    #
+    #     fetched_any = True
+    #     record = dict(zip(fields, record))
+    #     logging.info(record)
+    #     properties = {k: record[k] for k in ('Altitude', 'AltDatum')}
+    #     properties['agency'] = 'NMBGMR'
+    #     properties['source_id'] = record['OBJECTID']
+    #     properties['PointID'] = record['PointID']
+    #     properties['WellID'] = record['WellID']
+    #     name = record['PointID'].upper()
+    #     description = 'Location of well where measurements are made'
+    #     e = record['Easting']
+    #     n = record['Northing']
+    #     z = 13
+    #     # logging.info(f'PointID={name}, Easting={e},Northing={n}')
+    #     st = time.time()
+    #     lid, added = stac.put_location(name, description, properties, utm=(e, n, z))
+    #     logging.info(f'added location {lid} {time.time() - st}')
+    #     properties['geoconnex'] = f'https://geoconnex.us/nmwdi/st/locations/{lid}'
+    #
+    #     stac.patch_location(lid, {'properties': properties})
+    #
+    #     name = 'Water Well'
+    #     description = 'Well drilled or set into subsurface for the purposes ' \
+    #                   'of pumping water or monitoring groundwater'
+    #
+    #     properties = {'WellDepth': record['WellDepth'],
+    #                   'GeologicFormation': record['FormationZone'],
+    #                   'Use': record['CurrentUseDescription'],
+    #                   'Status': record['StatusDescription'],
+    #                   'Screens': screens.get(record['PointID'], []),
+    #                   'agency': 'NMBGMR',
+    #                   'PointID': record['PointID'],
+    #                   'WellID': record['WellID'],
+    #                   'source_id': record['OBJECTID']}
+    #     # logging.info(f'Add thing to {lid}')
+    #     st = time.time()
+    #     stac.put_thing(name, description, properties, lid)
+    #     logging.info(f'added thing to {lid} {time.time() - st}')
+    #     previous_max_objectid = record['OBJECTID']
+    #     cnt += 1
+    #
+    # t = time.time() - gst
+    # logging.info(f'total upload time={t} n={cnt} avg={cnt / t}')
+    #
+    # if not fetched_any or cnt >= total_records:
+    #     # start back at begin to reexamine sites
+    #     previous_max_objectid = 0
+    #
+    # return previous_max_objectid
 
 
 
