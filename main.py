@@ -13,37 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
-from util import make_sta_client
+from nmbgmr_locations_things import entrypoint as nlt
+from isc_seven_rivers import entrypoint as isr
 
 
-class BaseSTAO:
-    def render(self, request):
-        resp = None
-        data = self._extract(request)
-        if data:
-            data = self._transform(request, data)
-            if data:
-                resp = self._load(request, data)
-
-        return resp
-
-    def _extract(self, request):
-        raise NotImplementedError
-
-    def _transform(self, request, data):
-        raise NotImplementedError
-
-    def _load(self, request, data):
-        raise NotImplementedError
+def nmbgmr_locations_things(request):
+    return nlt(request)
 
 
-class ISCSevenRiversSTAO(BaseSTAO):
-    def _extract(self, request):
-        pass
-
-
-def entrypoint(request):
-    stao = ISCSevenRiversSTAO()
-    return stao.render(request)
-
+def isc_seven_rivers(request):
+    return isr(request)
 # ============= EOF =============================================

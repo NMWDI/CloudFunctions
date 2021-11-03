@@ -56,7 +56,7 @@ def make_screens(client, objectid, dataset, site_table_name):
     return screens
 
 
-def nmbgmr_locations_things(request):
+def entrypoint(request):
     fields = ['Easting', 'PointID', 'AltDatum', 'Altitude', 'WellID',
               'Northing', 'OBJECTID', 'SiteNames', 'WellDepth', 'CurrentUseDescription',
               'StatusDescription', 'FormationZone']
