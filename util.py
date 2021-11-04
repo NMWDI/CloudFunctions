@@ -16,9 +16,6 @@
 import logging
 from sta.sta_client import STAClient
 
-# from airflow.hooks.base_hook import BaseHook
-# from airflow.models import TaskInstance
-
 
 def make_gwl_payload(stac, rs, tag, last_obs, additional=None):
     if last_obs:

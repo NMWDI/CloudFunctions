@@ -13,6 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
+import requests
+from google.cloud import bigquery
+
 from util import make_sta_client
 
 
@@ -30,20 +33,40 @@ class BaseSTAO:
     def _extract(self, request):
         raise NotImplementedError
 
-    def _transform(self, request, data):
+    def _transform(self, request, records):
+        return records
+
+    def _load(self, request, records):
         raise NotImplementedError
 
-    def _load(self, request, data):
-        raise NotImplementedError
+    def _get_bq_items(self, fields, dataset, tablename, where=None):
+        client = bigquery.Client()
+        sql = f'select {fields} from {dataset}.{tablename}'
+        if where:
+            sql = f'{sql} where {where}'
+
+        job = client.query(sql)
+
+        return job.result()
 
 
 class ISCSevenRiversSTAO(BaseSTAO):
     def _extract(self, request):
-        pass
+        dataset = 'locations'
+        tablename = 'isc_seven_rivers_sites'
+        fields = []
+        return self._get_bq_items(fields, dataset, tablename, where=None)
+
+    def _load(self, request, records):
+        for item in records:
+            print(item)
 
 
 def entrypoint(request):
     stao = ISCSevenRiversSTAO()
     return stao.render(request)
 
+
+if __name__ == '__main__':
+    entrypoint(None)
 # ============= EOF =============================================
