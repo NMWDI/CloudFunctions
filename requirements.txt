@@ -1,3 +1,5 @@
 google-cloud-bigquery
-pysta==0.0.8
+google-cloud-secret-manager
+pysta==0.0.9
 requests
+

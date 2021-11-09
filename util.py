@@ -13,8 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
+import json
 import logging
-from sta.sta_client import STAClient
+
+from sta.client import Client
+# from sta.sta_client import STAClient
 
 
 def make_gwl_payload(stac, rs, tag, last_obs, additional=None):
@@ -133,10 +136,30 @@ def make_total_records(client, dataset, table_name, objectid=None):
 #     return staclient
 
 
-def make_sta_client(sta_key='nmbgmr_sta_conn_id', use_local=False):
-    connection = None
-    stac = STAClient(connection.host, connection.login, connection.password,
-                     connection.port)
+def make_sta_client():
+    from google.cloud import secretmanager
+
+    # GCP project in which to store secrets in Secret Manager.
+    project_id = "waterdatainitiative-271000"
+
+    # ID of the secret to create.
+    secret_id = "nmwdi_st2_connection"
+
+    # Create the Secret Manager client.
+    client = secretmanager.SecretManagerServiceClient()
+    name = f'projects/{project_id}/secrets/{secret_id}/versions/latest'
+    response = client.access_secret_version(request={"name": name})
+
+    # Print the secret payload.
+    #
+    # WARNING: Do not print the secret in a production environment - this
+    # snippet is showing how to access the secret material.
+
+    payload = response.payload.data.decode("UTF-8")
+    connection = json.loads(payload)
+    stac = Client(connection['host'],
+                     connection['username'],
+                     connection['password'])
     return stac
 
 

@@ -20,28 +20,47 @@ from util import make_sta_client
 
 
 class BaseSTAO:
+    entity_tag = None
+
+    def __init__(self):
+        self._client = make_sta_client()
+
     def render(self, request):
         resp = None
         data = self._extract(request)
         if data:
-            data = self._transform(request, data)
-            if data:
-                resp = self._load(request, data)
+            resp = self._load(request, data)
 
         return resp
 
     def _extract(self, request):
         raise NotImplementedError
 
-    def _transform(self, request, records):
-        return records
+    def _transform(self, request, record):
+        return record
 
     def _load(self, request, records):
-        raise NotImplementedError
+        cnt = 0
+        for record in records:
+            record = self._transform(request, record)
+            self._load_record(record)
+            cnt += 1
+        return f'Loaded {cnt} records'
+
+    def _load_record(self, record):
+        tag = self._entity_tag
+        clt = self._client
+        funcname = f'put_{tag.lower()[:-1]}'
+        func = getattr(clt, funcname)
+        # print(f'calling {funcname} {func} {record}')
+        print(f'load record={record}')
+        iotid = func(record).iotid
+        print(f'     iotid={iotid}')
 
     def _get_bq_items(self, fields, dataset, tablename, where=None):
         client = bigquery.Client()
-        sql = f'select {fields} from {dataset}.{tablename}'
+        fs = ','.join(fields)
+        sql = f'select {fs} from {dataset}.{tablename}'
         if where:
             sql = f'{sql} where {where}'
 
@@ -50,23 +69,66 @@ class BaseSTAO:
         return job.result()
 
 
-class ISCSevenRiversSTAO(BaseSTAO):
+class ISCSevenRiversLocationsSTAO(BaseSTAO):
+    _entity_tag = 'Locations'
+
+    def _extract(self, request):
+        dataset = 'locations'
+        tablename = 'isc_seven_rivers_monitoring_points'
+        fields = ['id', 'name', 'type', 'comments', 'latitude', 'longitude', 'groundSurfaceElevationFeet']
+        return self._get_bq_items(fields, dataset, tablename, where=None)
+
+    def _transform(self, request, record):
+        """
+        return a ST compitable object
+        :param request:
+        :param records:
+        :return:
+        """
+
+        loc = {"type": "Point", "coordinates": [record['longitude'],
+                                                record['latitude']]}
+        props = {'source_id': record['id'],
+                 'agency': 'ISC_SEVEN_RIVERS',
+                 'groundSurfaceElevationFeet': record['groundSurfaceElevationFeet']}
+        obj = {'name': record['name'],
+               'description': record['comments'] or 'No Description',
+               'location': loc,
+               'properties': props,
+               "encodingType": "application/vnd.geo+json", }
+
+        return obj
+
+
+class ISCSevenRiversThingsSTAO(BaseSTAO):
+    entity_tag = 'Things'
+
     def _extract(self, request):
         dataset = 'locations'
         tablename = 'isc_seven_rivers_sites'
         fields = []
         return self._get_bq_items(fields, dataset, tablename, where=None)
 
-    def _load(self, request, records):
-        for item in records:
-            print(item)
+    def _transform(self, request, record):
+        location_id = self._client.get_location_id(record['name'])
+        props = {}
+        obj = {'name': record['name'],
+               'description': 'No Description',
+               'properties': props,
+               'Locations': [{'@iot.id': location_id}]}
+        return obj
 
 
-def entrypoint(request):
-    stao = ISCSevenRiversSTAO()
+def etl_locations(request):
+    stao = ISCSevenRiversLocationsSTAO()
+    return stao.render(request)
+
+
+def etl_things(request):
+    stao = ISCSevenRiversThingsSTAO()
     return stao.render(request)
 
 
 if __name__ == '__main__':
-    entrypoint(None)
+    etl_locations(None)
 # ============= EOF =============================================

@@ -13,14 +13,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
-from nmbgmr_locations_things import entrypoint as nlt
-from isc_seven_rivers import entrypoint as isr
+
+from isc_seven_rivers import etl_locations as isr_locations, etl_things as isr_things
 
 
-def nmbgmr_locations_things(request):
-    return nlt(request)
+# def nmbgmr_locations_things(request):
+#     return nlt(request)
 
 
-def isc_seven_rivers(request):
-    return isr(request)
+def isc_seven_rivers_locations(request):
+    return isr_locations(request)
+
+
+def isc_seven_rivers_things(request):
+    return isr_things(request)
 # ============= EOF =============================================
