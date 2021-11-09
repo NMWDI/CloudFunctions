@@ -90,6 +90,7 @@ class ISCSevenRiversLocationsSTAO(BaseSTAO):
                                                 record['latitude']]}
         props = {'source_id': record['id'],
                  'agency': 'ISC_SEVEN_RIVERS',
+                 'source_api': 'https://nmisc-wf.gladata.com/api/getMonitoringPoints.ashx',
                  'groundSurfaceElevationFeet': record['groundSurfaceElevationFeet']}
         obj = {'name': record['name'],
                'description': record['comments'] or 'No Description',
