@@ -140,7 +140,7 @@ def make_sta_client():
     from google.cloud import secretmanager
 
     # GCP project in which to store secrets in Secret Manager.
-    project_id = "waterdatainitiative-271000"
+    project_id = "95715287188"
 
     # ID of the secret to create.
     secret_id = "nmwdi_st2_connection"
