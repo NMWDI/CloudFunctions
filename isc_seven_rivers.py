@@ -57,6 +57,15 @@ class BaseSTAO:
         iotid = func(record).iotid
         print(f'     iotid={iotid}')
 
+
+class BQSTAO(BaseSTAO):
+    _fields = None
+    _dataset = None
+    _tablename = None
+
+    def _extract(self, request):
+        return self._get_bq_items(self._fields, self._dataset, self._tablename, where=None)
+
     def _get_bq_items(self, fields, dataset, tablename, where=None):
         client = bigquery.Client()
         fs = ','.join(fields)
@@ -69,14 +78,14 @@ class BaseSTAO:
         return job.result()
 
 
-class ISCSevenRiversLocationsSTAO(BaseSTAO):
-    _entity_tag = 'Locations'
+class ISCSevenRiversMonitoringPoints(BQSTAO):
+    _fields = ['id', 'name', 'type', 'comments', 'latitude', 'longitude', 'groundSurfaceElevationFeet']
+    _dataset = 'locations'
+    _tablename = 'isc_seven_rivers_monitoring_points'
 
-    def _extract(self, request):
-        dataset = 'locations'
-        tablename = 'isc_seven_rivers_monitoring_points'
-        fields = ['id', 'name', 'type', 'comments', 'latitude', 'longitude', 'groundSurfaceElevationFeet']
-        return self._get_bq_items(fields, dataset, tablename, where=None)
+
+class ISCSevenRiversLocationsSTAO(ISCSevenRiversMonitoringPoints):
+    _entity_tag = 'Locations'
 
     def _transform(self, request, record):
         """
@@ -101,22 +110,17 @@ class ISCSevenRiversLocationsSTAO(BaseSTAO):
         return obj
 
 
-class ISCSevenRiversThingsSTAO(BaseSTAO):
-    entity_tag = 'Things'
-
-    def _extract(self, request):
-        dataset = 'locations'
-        tablename = 'isc_seven_rivers_sites'
-        fields = []
-        return self._get_bq_items(fields, dataset, tablename, where=None)
+class ISCSevenRiversThingsSTAO(ISCSevenRiversMonitoringPoints):
+    _entity_tag = 'Things'
 
     def _transform(self, request, record):
-        location_id = self._client.get_location_id(record['name'])
-        props = {}
-        obj = {'name': record['name'],
+        name = record['name']
+        location = self._client.get_location(f"name eq '{name}'")
+        props = {'type': record['type']}
+        obj = {'name': 'Water Well',
                'description': 'No Description',
                'properties': props,
-               'Locations': [{'@iot.id': location_id}]}
+               'Locations': [{'@iot.id': location['@iot.id']}]}
         return obj
 
 
@@ -131,5 +135,5 @@ def etl_things(request):
 
 
 if __name__ == '__main__':
-    etl_locations(None)
+    etl_things(None)
 # ============= EOF =============================================
