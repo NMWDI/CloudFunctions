@@ -14,17 +14,5 @@
 # limitations under the License.
 # ===============================================================================
 
-from isc_seven_rivers import etl_locations as isr_locations, etl_things as isr_things
 
-
-# def nmbgmr_locations_things(request):
-#     return nlt(request)
-
-
-def isc_seven_rivers_locations(request):
-    return isr_locations(request)
-
-
-def isc_seven_rivers_things(request):
-    return isr_things(request)
 # ============= EOF =============================================

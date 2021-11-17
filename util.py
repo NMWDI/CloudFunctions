@@ -16,7 +16,10 @@
 import json
 import logging
 
+import pyproj
 from sta.client import Client
+
+
 # from sta.sta_client import STAClient
 
 
@@ -110,12 +113,10 @@ def make_gwl(client, fields, dataset, table_name, previous_max_objectid):
     if records:
         max_objectid = max((r[fields.index('OBJECTID')] for r in records))
 
-
     return records, total_records, max_objectid
 
 
 def make_total_records(client, dataset, table_name, objectid=None):
-
     sql = f'''SELECT count(*) from {dataset}.{table_name}'''
     params = {}
     if objectid:
@@ -158,10 +159,38 @@ def make_sta_client():
     payload = response.payload.data.decode("UTF-8")
     connection = json.loads(payload)
     stac = Client(connection['host'],
-                     connection['username'],
-                     connection['password'])
+                  connection['username'],
+                  connection['password'])
     return stac
 
+
+PROJECTIONS = {}
+
+
+def make_geometry_point_from_utm(e, n, zone=None, ellps=None, srid=None):
+    if zone:
+        if zone in PROJECTIONS:
+            p = PROJECTIONS[zone]
+        else:
+            if ellps is None:
+                ellps = "WGS84"
+            p = pyproj.Proj(proj="utm", zone=int(zone), ellps=ellps)
+            PROJECTIONS[zone] = p
+    elif srid:
+        # get zone
+        if srid in PROJECTIONS:
+            p = PROJECTIONS[srid]
+            PROJECTIONS[srid] = p
+        else:
+            # p = pyproj.Proj(proj='utm', zone=int(zone), ellps='WGS84')
+            p = pyproj.Proj("EPSG:{}".format(srid))
+
+    lon, lat = p(e, n, inverse=True)
+    return make_geometry_point_from_latlon(lat, lon)
+
+
+def make_geometry_point_from_latlon(lat, lon):
+    return {"type": "Point", "coordinates": [lon, lat]}
 
 # def get_prev(context, task_id):
 #     newdate = context['prev_execution_date']
