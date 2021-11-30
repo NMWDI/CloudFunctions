@@ -13,14 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
-import logging
-import time
-from google.cloud import bigquery
-from itertools import groupby
-from operator import itemgetter
-
-from stao import BaseSTAO, BQSTAO, LocationGeoconnexMixin
-from util import make_total_records, make_sta_client, make_geometry_point_from_utm
+from stao import BQSTAO, LocationGeoconnexMixin
+from util import make_geometry_point_from_utm
 
 
 class NMBGMR_Site_STAO(BQSTAO):
@@ -80,14 +74,6 @@ class NMBGMRThings(NMBGMR_Site_STAO):
         return payload
 
 
-def etl_locations(request):
-    stao = NMBGMRLocations()
-    return stao.render(request)
-
-
-def etl_things(request):
-    stao = NMBGMRThings()
-    return stao.render(request)
 
 
 #
