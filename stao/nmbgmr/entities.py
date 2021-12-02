@@ -57,7 +57,7 @@ class NMBGMRThings(NMBGMR_Site_STAO):
 
         sql = f'select {fields} from {self._dataset}.{tablename} as ws ' \
               f'join {self._dataset}.{self._tablename} as wd on wd.WellID= ws.WellID ' \
-              f'where ws.PointID={pointid}'
+              f'where ws.PointID="{pointid}"'
         return self._bq_query(sql)
 
     def _transform(self, request, record):
