@@ -19,8 +19,6 @@ from util import make_sta_client
 
 
 class BaseSTAO:
-    entity_tag = None
-
     def __init__(self):
         self._client = make_sta_client()
 

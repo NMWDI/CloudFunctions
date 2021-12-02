@@ -13,8 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
-from stao import BQSTAO, LocationGeoconnexMixin
-from util import make_geometry_point_from_utm
+from stao.stao import BQSTAO, LocationGeoconnexMixin
+from stao.util import make_geometry_point_from_utm
 
 
 class NMBGMR_Site_STAO(BQSTAO):
@@ -27,6 +27,8 @@ class NMBGMR_Site_STAO(BQSTAO):
 
 
 class NMBGMRLocations(NMBGMR_Site_STAO, LocationGeoconnexMixin):
+    _entity_tag = 'Locations'
+
     def _transform(self, request, record):
         properties = {k: record[k] for k in ('Altitude', 'AltDatum', 'WellID', 'PointID')}
         properties['agency'] = 'NMBGMR'
@@ -46,6 +48,8 @@ class NMBGMRLocations(NMBGMR_Site_STAO, LocationGeoconnexMixin):
 
 
 class NMBGMRThings(NMBGMR_Site_STAO):
+    _entity_tag = 'Things'
+
     def _get_screens(self, pointid):
         fields = ['ScreenTop', 'ScreenBottom', 'ScreenDescription']
         tablename = 'nmbgmrWellScreens'
