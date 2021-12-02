@@ -58,7 +58,8 @@ class NMBGMRThings(NMBGMR_Site_STAO):
         sql = f'select {fields} from {self._dataset}.{tablename} as ws ' \
               f'join {self._dataset}.{self._tablename} as wd on wd.WellID= ws.WellID ' \
               f'where ws.PointID="{pointid}"'
-        return self._bq_query(sql)
+        rows = self._bq_query(sql)
+        return [{fi: s[fi]} for s in rows for fi in fields]
 
     def _transform(self, request, record):
         name = record['PointID']
