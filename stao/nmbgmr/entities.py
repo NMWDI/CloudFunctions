@@ -13,8 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
-from stao.stao import BQSTAO, LocationGeoconnexMixin
-from stao.util import make_geometry_point_from_utm
+from stao import BQSTAO, LocationGeoconnexMixin
+from util import make_geometry_point_from_utm
 
 
 class NMBGMR_Site_STAO(BQSTAO):
