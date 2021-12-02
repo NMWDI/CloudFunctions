@@ -63,7 +63,7 @@ class NMBGMRThings(NMBGMR_Site_STAO):
     def _transform(self, request, record):
         name = record['PointID']
         location = self._client.get_location(f"name eq '{name}'")
-        screens = self._get_screens(location)
+        screens = self._get_screens(name)
         payload = {'name': 'Water Well',
                    'Locations': [{'@iot.id': location['@iot.id']}],
                    'description': 'Well drilled or set into subsurface for the purposes '
