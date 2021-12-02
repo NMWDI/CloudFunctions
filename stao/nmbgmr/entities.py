@@ -41,7 +41,8 @@ class NMBGMRLocations(NMBGMR_Site_STAO, LocationGeoconnexMixin):
         payload = {'name': record['PointID'].upper(),
                    'description': 'Location of well where measurements are made',
                    'properties': properties,
-                   'location': make_geometry_point_from_utm(e, n, z)
+                   'location': make_geometry_point_from_utm(e, n, z),
+                   "encodingType": "application/vnd.geo+json",
                    }
 
         return payload
