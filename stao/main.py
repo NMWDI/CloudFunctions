@@ -35,4 +35,5 @@ def nmbgmr_things(request):
     stao = NMBGMRThings()
     return stao.render(request)
 
+
 # ============= EOF =============================================

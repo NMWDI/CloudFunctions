@@ -13,9 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
-from stao import BQSTAO, LocationGeoconnexMixin
-from util import make_geometry_point_from_utm
-
+try:
+    from stao import BQSTAO, LocationGeoconnexMixin
+    from util import make_geometry_point_from_utm
+except ImportError:
+    from stao.stao import BQSTAO, LocationGeoconnexMixin
+    from stao.util import make_geometry_point_from_utm
 
 class NMBGMR_Site_STAO(BQSTAO):
     _fields = ['Easting', 'PointID', 'AltDatum', 'Altitude', 'WellID',
@@ -53,13 +56,15 @@ class NMBGMRThings(NMBGMR_Site_STAO):
 
     def _get_screens(self, pointid):
         fields = ['ScreenTop', 'ScreenBottom', 'ScreenDescription']
+        fs = ",".join(fields)
         tablename = 'nmbgmrWellScreens'
 
-        sql = f'select {fields} from {self._dataset}.{tablename} as ws ' \
-              f'join {self._dataset}.{self._tablename} as wd on wd.WellID= ws.WellID ' \
-              f'where ws.PointID="{pointid}"'
+        sql = f'select {fs} from {self._dataset}.{tablename} ' \
+              f'where PointID="{pointid}"'
         rows = self._bq_query(sql)
-        return [{fi: s[fi]} for s in rows for fi in fields]
+        ret = [{fi: row[fi] for fi in fields} for row in rows]
+
+        return ret
 
     def _transform(self, request, record):
         name = record['PointID']
@@ -81,8 +86,6 @@ class NMBGMRThings(NMBGMR_Site_STAO):
                    }
 
         return payload
-
-
 
 
 #

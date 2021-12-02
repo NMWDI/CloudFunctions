@@ -15,7 +15,11 @@
 # ===============================================================================
 from google.cloud import bigquery
 
-from util import make_sta_client
+try:
+    from util import make_sta_client
+except ImportError:
+    from stao.util import make_sta_client
+
 
 
 class BaseSTAO:
