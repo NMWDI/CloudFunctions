@@ -24,13 +24,13 @@ def isc_seven_rivers_things(request):
     return etl_things(request)
 
 
-def etl_locations(request):
+def nmbgmr_locations(request):
     from nmbgmr.entities import NMBGMRLocations
     stao = NMBGMRLocations()
     return stao.render(request)
 
 
-def etl_things(request):
+def nmbgmr_things(request):
     from nmbgmr.entities import NMBGMRThings
     stao = NMBGMRThings()
     return stao.render(request)
