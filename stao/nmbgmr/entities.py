@@ -61,8 +61,11 @@ class NMBGMRThings(NMBGMR_Site_STAO):
         return self._bq_query(sql)
 
     def _transform(self, request, record):
-        screens = self._get_screens(record['PointID'])
+        name = record['PointID']
+        location = self._client.get_location(f"name eq '{name}'")
+        screens = self._get_screens(location)
         payload = {'name': 'Water Well',
+                   'Locations': [{'@iot.id': location['@iot.id']}],
                    'description': 'Well drilled or set into subsurface for the purposes '
                                   'of pumping water or monitoring groundwater',
                    'properties': {'WellDepth': record['WellDepth'],
