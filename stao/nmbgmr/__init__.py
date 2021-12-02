@@ -13,16 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
-from entities import NMBGMRLocations, NMBGMRThings
 
-
-def etl_locations(request):
-    stao = NMBGMRLocations()
-    return stao.render(request)
-
-
-def etl_things(request):
-    stao = NMBGMRThings()
-    return stao.render(request)
 
 # ============= EOF =============================================

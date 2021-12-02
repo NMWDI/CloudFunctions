@@ -1,7 +1,0 @@
-google-cloud-bigquery
-google-cloud-secret-manager
-pysta==0.0.11
-requests
-pyproj
-
-

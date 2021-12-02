@@ -14,13 +14,25 @@
 # limitations under the License.
 # ===============================================================================
 
-
 def isc_seven_rivers_locations(request):
-    from isc_seven_rivers.isc_seven_rivers import etl_locations
+    from isc_seven_rivers.entities import etl_locations
     return etl_locations(request)
 
 
 def isc_seven_rivers_things(request):
-    from isc_seven_rivers.isc_seven_rivers import etl_things
+    from isc_seven_rivers.entities import etl_things
     return etl_things(request)
+
+
+def etl_locations(request):
+    from nmbgmr.entities import NMBGMRLocations
+    stao = NMBGMRLocations()
+    return stao.render(request)
+
+
+def etl_things(request):
+    from nmbgmr.entities import NMBGMRThings
+    stao = NMBGMRThings()
+    return stao.render(request)
+
 # ============= EOF =============================================
