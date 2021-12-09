@@ -13,8 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
-from stao import BQSTAO, LocationGeoconnexMixin
-from util import make_geometry_point_from_latlon
+try:
+    from stao import BQSTAO, LocationGeoconnexMixin
+    from util import make_geometry_point_from_latlon
+except ImportError:
+    from stao.stao import BQSTAO, LocationGeoconnexMixin
+    from stao.util import make_geometry_point_from_latlon
 
 
 class ISCSevenRiversMonitoringPoints(BQSTAO):

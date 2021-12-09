@@ -20,6 +20,7 @@ except ImportError:
     from stao.stao import BQSTAO, LocationGeoconnexMixin
     from stao.util import make_geometry_point_from_utm
 
+
 class NMBGMR_Site_STAO(BQSTAO):
     _fields = ['Easting', 'PointID', 'AltDatum', 'Altitude', 'WellID',
                'Northing', 'OBJECTID', 'SiteNames', 'WellDepth', 'CurrentUseDescription',

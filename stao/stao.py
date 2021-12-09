@@ -26,11 +26,11 @@ class BaseSTAO:
     def __init__(self):
         self._client = make_sta_client()
 
-    def render(self, request):
+    def render(self, request, dry=False):
         resp = None
         data = self._extract(request)
         if data:
-            resp = self._load(request, data)
+            resp = self._load(request, data, dry)
 
         return resp
 
@@ -40,22 +40,25 @@ class BaseSTAO:
     def _transform(self, request, record):
         return record
 
-    def _load(self, request, records):
+    def _load(self, request, records, dry):
         cnt = 0
         for record in records:
-            record = self._transform(request, record)
-            self._load_record(record)
-            cnt += 1
+            payload = self._transform(request, record)
+            if payload:
+                self._load_record(payload, dry)
+                cnt += 1
+            else:
+                print(f'skipping {record}')
         return f'Loaded {cnt} records'
 
-    def _load_record(self, record):
+    def _load_record(self, record, dry):
         tag = self._entity_tag
         clt = self._client
         funcname = f'put_{tag.lower()[:-1]}'
         func = getattr(clt, funcname)
         # print(f'calling {funcname} {func} {record}')
-        print(f'load record={record}')
-        obj = func(record)
+        print(f'dry={dry} load record={record}')
+        obj = func(record, dry=dry)
         print(f'     iotid={obj.iotid}')
         return obj
 

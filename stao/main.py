@@ -36,4 +36,14 @@ def nmbgmr_things(request):
     return stao.render(request)
 
 
+def ose_realtime_locations(request):
+    from ose_realtime.entities import OSERealtimeLocations
+    stao = OSERealtimeLocations()
+    return stao.render(request)
+
+
+def ose_realtime_things(request):
+    from ose_realtime.entities import OSERealtimeThings
+    stao = OSERealtimeThings()
+    return stao.render(request)
 # ============= EOF =============================================

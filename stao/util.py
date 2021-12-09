@@ -15,7 +15,9 @@
 # ===============================================================================
 import json
 import logging
+import random
 
+import geojson as geojson
 import pyproj
 from sta.client import Client
 
@@ -137,7 +139,7 @@ def make_total_records(client, dataset, table_name, objectid=None):
 #     return staclient
 
 
-def make_sta_client():
+def make_sta_client(dry=False):
     from google.cloud import secretmanager
 
     # GCP project in which to store secrets in Secret Manager.
@@ -192,6 +194,19 @@ def make_geometry_point_from_utm(e, n, zone=None, ellps=None, srid=None):
 def make_geometry_point_from_latlon(lat, lon):
     return {"type": "Point", "coordinates": [lon, lat]}
 
+
+def make_fuzzy_geometry_from_latlon(lat, lon):
+    from shapely import geometry, affinity
+    center = geometry.Point(lon, lat)  # Null Island
+    radius = 0.008
+    xr = random.random()*radius
+    yr = random.random()*radius
+    center = affinity.translate(center, xoff=xr, yoff=yr)
+    circle = center.buffer(radius)  # Degrees Radius
+
+    return json.loads(geojson.dumps(geometry.mapping(circle)))
+
+
 # def get_prev(context, task_id):
 #     newdate = context['prev_execution_date']
 #     logging.info(f'prevdate ={newdate}')
@@ -200,7 +215,7 @@ def make_geometry_point_from_latlon(lat, lon):
 #     logging.info(f'prev max {previous_max}')
 #     return previous_max
 
-
+LOCATION_DESCRIPTION = 'Location of well where measurements are made'
 GWL_DATASTREAM = 'Groundwater Levels'
 PRESSURE_GWL_DATASTREAM = 'Groundwater Levels(Pressure)'
 ACOUSTIC_GWL_DATASTREAM = 'Groundwater Levels(Acoustic)'
