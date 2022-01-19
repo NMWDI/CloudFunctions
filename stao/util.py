@@ -23,7 +23,8 @@ from sta.client import Client
 
 
 # from sta.sta_client import STAClient
-
+def asiotid(rec):
+    return {'@iot.id': rec['@iot.id']}
 
 def make_gwl_payload(stac, rs, tag, last_obs, additional=None):
     if last_obs:

@@ -26,8 +26,8 @@ try:
 except ImportError:
     from stao.stao import LocationGeoconnexMixin, BQSTAO, BaseSTAO
     from stao.util import make_geometry_point_from_utm, make_geometry_point_from_latlon, \
-        make_fuzzy_geometry_from_latlon, \
-        LOCATION_DESCRIPTION
+    make_fuzzy_geometry_from_latlon, \
+    LOCATION_DESCRIPTION, asiotid
 
 
 def location_name(record):
@@ -154,7 +154,7 @@ class OSERealtimeThings(OSERealtime_STAO):
 
             payload = {'name': 'OSE Realtime Station',
                        'description': 'OSE Realtime Station',
-                       'Locations': [{'@iot.id': location['@iot.id']}],
+                       'Locations': [asiotid(location)],
                        'properties': properties}
             return payload
 
@@ -168,14 +168,21 @@ class OSERealtimeDatastreams(OSERealtime_STAO):
             record, location = args
             sensor = record['Meter_type']
 
-            sensor = self._client.get_sensors(sensor)
-            dis = self._client.get_observed_properties('OSERealTimeDischarge')
-            ga = self._client.get_observed_properties('OSERealTimeGageHeight')
+            sensor = next(self._client.get_sensors(sensor))
+            dis = next(self._client.get_observed_properties('OSERealTimeDischarge'))
+            ga = next(self._client.get_observed_properties('OSERealTimeGageHeight'))
+            thing = self._client.get_thing(name='OSE Realtime Station', location=location['@iot.id'])
+
+            dis = asiotid(dis)
+            ga = asiotid(ga)
+            sensor = asiotid(sensor)
+            thing = asiotid(thing)
 
             payloads = [{'name': "OSERealTime Discharge",
                          'description': 'No Description',
                          'Sensor': sensor,
                          'ObservedProperty': dis,
+                         'Thing': thing,
                          'unitofMeasurement': {"name": "Gallon per Minute",
                                                "symbol": "gpm",
                                                "definition": "http://qudt.org/vocab/unit/GAL_US-PER-MIN",
@@ -186,6 +193,7 @@ class OSERealtimeDatastreams(OSERealtime_STAO):
                          'description': 'No Description',
                          'Sensor': sensor,
                          'ObservedProperty': ga,
+                         'Thing': thing,
                          'unitofMeasurement': FOOT,
                          'observationType': OM_Measurement,
                          }

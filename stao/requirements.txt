@@ -1,7 +1,7 @@
 google-cloud-bigquery
 google-cloud-secret-manager
 google-cloud-storage
-pysta==0.0.15
+pysta==0.0.16
 requests
 pyproj
 shapely
