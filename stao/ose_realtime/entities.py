@@ -18,6 +18,7 @@ import json
 import geojson
 from google.cloud import storage
 from jsonschema import validate
+from sta.definitions import OM_Measurement, FOOT
 
 try:
     from stao import LocationGeoconnexMixin, BQSTAO, BaseSTAO
@@ -145,53 +146,80 @@ class OSERealtimeThings(OSERealtime_STAO):
     _entity_tag = 'thing'
 
     def _transform(self, request, record):
-        record, location = self._make_location(record)
+        args = self._make_location(record)
+        if args:
+            record, location = args
+            properties = self._make_properties(record, ('Comments', 'Station_ID', 'Gauge_name', 'data_url', 'Comments',
+                                                        'SW_or_GW', 'Meter_type', 'Meter_status'))
 
-        properties = self._make_properties(record, ('Comments', 'Station_ID', 'Gauge_name', 'data_url', 'Comments',
-                                                    'SW_or_GW', 'Meter_type', 'Meter_status'))
-
-        payload = {'name': 'OSE Realtime Station',
-                   'description': 'OSE Realtime Station',
-                   'Locations': [{'@iot.id': location['@iot.id']}],
-                   'properties': properties}
-        return payload
+            payload = {'name': 'OSE Realtime Station',
+                       'description': 'OSE Realtime Station',
+                       'Locations': [{'@iot.id': location['@iot.id']}],
+                       'properties': properties}
+            return payload
 
 
 class OSERealtimeDatastreams(OSERealtime_STAO):
     _entity_tag = 'datastream'
 
     def _transform(self, request, record):
-        record, location = self._make_location(record)
-        payload = {'name': record[''],
-                   'description': 'No Description'}
+        args = self._make_location(record)
+        if args:
+            record, location = args
+            sensor = record['Meter_type']
 
-        return payload
+            sensor = self._client.get_sensors(sensor)
+            dis = self._client.get_observed_properties('OSERealTimeDischarge')
+            ga = self._client.get_observed_properties('OSERealTimeGageHeight')
+
+            payloads = [{'name': "OSERealTime Discharge",
+                         'description': 'No Description',
+                         'Sensor': sensor,
+                         'ObservedProperty': dis,
+                         'unitofMeasurement': {"name": "Gallon per Minute",
+                                               "symbol": "gpm",
+                                               "definition": "http://qudt.org/vocab/unit/GAL_US-PER-MIN",
+                                               },
+                         'observationType': OM_Measurement,
+                         },
+                        {'name': "OSERealTime Gage Height",
+                         'description': 'No Description',
+                         'Sensor': sensor,
+                         'ObservedProperty': ga,
+                         'unitofMeasurement': FOOT,
+                         'observationType': OM_Measurement,
+                         }
+                        ]
+
+            return payloads
 
 
 class OSERealtimeSensors(OSERealtime_STAO):
     _entity_tag = 'sensor'
 
     def _transform(self, request, record):
-        record, location = self._make_location(record)
-        payload = {'name': record['Meter_type'],
-                   'description': 'No Description',
-                   'encodingType': 'application/pdf',
-                   'metadata': 'No Metadata'}
+        args = self._make_location(record)
+        if args:
+            record, location = args
+            payload = {'name': record['Meter_type'],
+                       'description': 'No Description',
+                       'encodingType': 'application/pdf',
+                       'metadata': 'No Metadata'}
 
-        return payload
+            return payload
 
 
 class OSERealtimeObservedProperties(OSERealtime_STAO):
-
-    _entity_tag = 'observedproperty '
+    _entity_tag = 'observedproperty'
 
     def _transform(self, request, record):
-        record, location = self._make_location(record)
-        payloads = [{'name': 'OSERealTimeDischarge',
-                     'description': 'Discharge (gpm)'},
-                    {'name': 'OSERealTimeGageHeight',
-                     'description': 'Gage Height (ft bgs)'}]
-        return payloads
+        args = self._make_location(record)
+        if args:
+            payloads = [{'name': 'OSERealTimeDischarge',
+                         'description': 'Discharge (gpm)'},
+                        {'name': 'OSERealTimeGageHeight',
+                         'description': 'Gage Height (ft bgs)'}]
+            return payloads
 
 
 if __name__ == '__main__':
