@@ -26,6 +26,7 @@ from sta.client import Client
 def asiotid(rec):
     return {'@iot.id': rec['@iot.id']}
 
+
 def make_gwl_payload(stac, rs, tag, last_obs, additional=None):
     if last_obs:
         rs = [ri for ri in rs if stac.make_st_time(ri['DateTimeMeasured']) > last_obs]

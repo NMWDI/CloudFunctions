@@ -22,7 +22,8 @@ from sta.definitions import OM_Measurement, FOOT
 
 try:
     from stao import LocationGeoconnexMixin, BQSTAO, BaseSTAO
-    from util import make_geometry_point_from_utm, make_geometry_point_from_latlon, make_fuzzy_geometry_from_latlon
+    from util import make_geometry_point_from_utm, make_geometry_point_from_latlon, make_fuzzy_geometry_from_latlon,\
+        LOCATION_DESCRIPTION, asiotid
 except ImportError:
     from stao.stao import LocationGeoconnexMixin, BQSTAO, BaseSTAO
     from stao.util import make_geometry_point_from_utm, make_geometry_point_from_latlon, \
