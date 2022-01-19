@@ -139,14 +139,16 @@ def make_total_records(client, dataset, table_name, objectid=None):
 #     return staclient
 
 
-def make_sta_client(dry=False):
+def make_sta_client(dry=False, project_id=None, secret_id=None):
     from google.cloud import secretmanager
 
-    # GCP project in which to store secrets in Secret Manager.
-    project_id = "95715287188"
+    if project_id is None:
+        # GCP project in which to store secrets in Secret Manager.
+        project_id = "95715287188"
 
-    # ID of the secret to create.
-    secret_id = "nmwdi_st2_connection"
+    if secret_id is None:
+        # ID of the secret to create.
+        secret_id = "nmwdi_st2_connection"
 
     # Create the Secret Manager client.
     client = secretmanager.SecretManagerServiceClient()

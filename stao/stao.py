@@ -43,10 +43,14 @@ class BaseSTAO:
     def _load(self, request, records, dry):
         cnt = 0
         for record in records:
-            payload = self._transform(request, record)
-            if payload:
-                self._load_record(payload, dry)
-                cnt += 1
+            payloads = self._transform(request, record)
+            if payloads:
+                if not isinstance(payloads, (tuple, list)):
+                    payloads = (payloads, )
+
+                for payload in payloads:
+                    self._load_record(payload, dry)
+                    cnt += 1
             else:
                 print(f'skipping {record}')
         return f'Loaded {cnt} records'
@@ -54,7 +58,7 @@ class BaseSTAO:
     def _load_record(self, record, dry):
         tag = self._entity_tag
         clt = self._client
-        funcname = f'put_{tag.lower()[:-1]}'
+        funcname = f'put_{tag.lower()}'
         func = getattr(clt, funcname)
         # print(f'calling {funcname} {func} {record}')
         print(f'dry={dry} load record={record}')

@@ -63,6 +63,25 @@ class BucketSTAO(BaseSTAO):
 class OSERealtime_STAO(BucketSTAO):
     _blob = 'ose_rt_locations.geojson'
 
+    def _make_location(self, record):
+        record = record['properties']
+        name = location_name(record)
+        if not name:
+            print(f'Invalid name. record={record}')
+            return
+
+        if not record['lat_ddd'] or not record['long_ddd']:
+            print(f'Invalid lat_ddd/long_ddd. record={record}')
+            return
+
+        try:
+            location = self._client.get_location(f"name eq '{name}'")
+        except BaseException as e:
+            print(f'failed getting location for {name}. exception={e}')
+            return
+
+        return record, location
+
     def _make_properties(self, record, attrs):
         properties = {k: record[k] for k in attrs}
         properties['agency'] = 'OSE'
@@ -74,7 +93,7 @@ class OSERealtime_STAO(BucketSTAO):
 
 
 class OSERealtimeLocations(OSERealtime_STAO, LocationGeoconnexMixin):
-    _entity_tag = 'Locations'
+    _entity_tag = 'location'
 
     def _transform(self, request, record):
         '''
@@ -123,24 +142,10 @@ class OSERealtimeLocations(OSERealtime_STAO, LocationGeoconnexMixin):
 
 
 class OSERealtimeThings(OSERealtime_STAO):
-    _entity_tag = 'Things'
+    _entity_tag = 'thing'
 
     def _transform(self, request, record):
-        record = record['properties']
-        name = location_name(record)
-        if not name:
-            print(f'Invalid name. record={record}')
-            return
-
-        if not record['lat_ddd'] or not record['long_ddd']:
-            print(f'Invalid lat_ddd/long_ddd. record={record}')
-            return
-
-        try:
-            location = self._client.get_location(f"name eq '{name}'")
-        except BaseException as e:
-            print(f'failed getting location for {name}. exception={e}')
-            return
+        record, location = self._make_location(record)
 
         properties = self._make_properties(record, ('Comments', 'Station_ID', 'Gauge_name', 'data_url', 'Comments',
                                                     'SW_or_GW', 'Meter_type', 'Meter_status'))
@@ -150,6 +155,43 @@ class OSERealtimeThings(OSERealtime_STAO):
                    'Locations': [{'@iot.id': location['@iot.id']}],
                    'properties': properties}
         return payload
+
+
+class OSERealtimeDatastreams(OSERealtime_STAO):
+    _entity_tag = 'datastream'
+
+    def _transform(self, request, record):
+        record, location = self._make_location(record)
+        payload = {'name': record[''],
+                   'description': 'No Description'}
+
+        return payload
+
+
+class OSERealtimeSensors(OSERealtime_STAO):
+    _entity_tag = 'sensor'
+
+    def _transform(self, request, record):
+        record, location = self._make_location(record)
+        payload = {'name': record['Meter_type'],
+                   'description': 'No Description',
+                   'encodingType': 'application/pdf',
+                   'metadata': 'No Metadata'}
+
+        return payload
+
+
+class OSERealtimeObservedProperties(OSERealtime_STAO):
+
+    _entity_tag = 'observedproperty '
+
+    def _transform(self, request, record):
+        record, location = self._make_location(record)
+        payloads = [{'name': 'OSERealTimeDischarge',
+                     'description': 'Discharge (gpm)'},
+                    {'name': 'OSERealTimeGageHeight',
+                     'description': 'Gage Height (ft bgs)'}]
+        return payloads
 
 
 if __name__ == '__main__':

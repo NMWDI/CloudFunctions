@@ -28,7 +28,7 @@ class ISCSevenRiversMonitoringPoints(BQSTAO):
 
 
 class ISCSevenRiversLocationsSTAO(ISCSevenRiversMonitoringPoints, LocationGeoconnexMixin):
-    _entity_tag = 'Locations'
+    _entity_tag = 'location'
 
     def _transform(self, request, record):
         """
@@ -53,7 +53,7 @@ class ISCSevenRiversLocationsSTAO(ISCSevenRiversMonitoringPoints, LocationGeocon
 
 
 class ISCSevenRiversThingsSTAO(ISCSevenRiversMonitoringPoints):
-    _entity_tag = 'Things'
+    _entity_tag = 'thing'
 
     def _transform(self, request, record):
         name = record['name']

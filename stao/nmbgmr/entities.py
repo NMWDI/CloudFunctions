@@ -31,7 +31,7 @@ class NMBGMR_Site_STAO(BQSTAO):
 
 
 class NMBGMRLocations(NMBGMR_Site_STAO, LocationGeoconnexMixin):
-    _entity_tag = 'Locations'
+    _entity_tag = 'location'
 
     def _transform(self, request, record):
         properties = {k: record[k] for k in ('Altitude', 'AltDatum', 'WellID', 'PointID')}
@@ -53,7 +53,7 @@ class NMBGMRLocations(NMBGMR_Site_STAO, LocationGeoconnexMixin):
 
 
 class NMBGMRThings(NMBGMR_Site_STAO):
-    _entity_tag = 'Things'
+    _entity_tag = 'thing'
 
     def _get_screens(self, pointid):
         fields = ['ScreenTop', 'ScreenBottom', 'ScreenDescription']
