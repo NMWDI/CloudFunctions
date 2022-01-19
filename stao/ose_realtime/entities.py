@@ -216,9 +216,11 @@ class OSERealtimeObservedProperties(OSERealtime_STAO):
         args = self._make_location(record)
         if args:
             payloads = [{'name': 'OSERealTimeDischarge',
-                         'description': 'Discharge (gpm)'},
+                         'description': 'Discharge (gpm)',
+                         'definition': 'No definition'},
                         {'name': 'OSERealTimeGageHeight',
-                         'description': 'Gage Height (ft bgs)'}]
+                         'description': 'Gage Height (ft bgs)',
+                         'definition': 'No definition'}]
             return payloads
 
 
