@@ -46,4 +46,15 @@ def ose_realtime_things(request):
     from ose_realtime.entities import OSERealtimeThings
     stao = OSERealtimeThings()
     return stao.render(request)
+
+
+def ose_realtime_datastreams(request):
+    from ose_realtime.entities import OSERealtimeSensors, OSERealtimeObservedProperties, OSERealtimeDatastreams
+
+    ret = []
+    for k in (OSERealtimeSensors, OSERealtimeObservedProperties, OSERealtimeDatastreams):
+        stao = k()
+        ret.append(stao.render(request))
+
+    return ','.join(ret)
 # ============= EOF =============================================
