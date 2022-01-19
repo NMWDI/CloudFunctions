@@ -168,9 +168,9 @@ class OSERealtimeDatastreams(OSERealtime_STAO):
             record, location = args
             sensor = record['Meter_type']
 
-            sensor = next(self._client.get_sensors(sensor))
-            dis = next(self._client.get_observed_properties('OSERealTimeDischarge'))
-            ga = next(self._client.get_observed_properties('OSERealTimeGageHeight'))
+            sensor = next(self._client.get_sensors(name=sensor))
+            dis = next(self._client.get_observed_properties(name='OSERealTimeDischarge'))
+            ga = next(self._client.get_observed_properties(name='OSERealTimeGageHeight'))
             thing = self._client.get_thing(name='OSE Realtime Station', location=location['@iot.id'])
 
             dis = asiotid(dis)
