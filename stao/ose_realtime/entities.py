@@ -184,7 +184,7 @@ class OSERealtimeDatastreams(OSERealtime_STAO):
                          'Sensor': sensor,
                          'ObservedProperty': dis,
                          'Thing': thing,
-                         'unitofMeasurement': {"name": "Gallon per Minute",
+                         'unitOfMeasurement': {"name": "Gallon per Minute",
                                                "symbol": "gpm",
                                                "definition": "http://qudt.org/vocab/unit/GAL_US-PER-MIN",
                                                },
@@ -195,7 +195,7 @@ class OSERealtimeDatastreams(OSERealtime_STAO):
                          'Sensor': sensor,
                          'ObservedProperty': ga,
                          'Thing': thing,
-                         'unitofMeasurement': FOOT,
+                         'unitOfMeasurement': FOOT,
                          'observationType': OM_Measurement,
                          }
                         ]
@@ -237,7 +237,8 @@ if __name__ == '__main__':
     # stao = OSERealtimeLocations()
     # stao.render(None, dry=False)
 
-    stao = OSERealtimeThings()
+    # stao = OSERealtimeThings()
+    stao = OSERealtimeDatastreams()
     stao.render(None, dry=False)
 
 # ============= EOF =============================================
