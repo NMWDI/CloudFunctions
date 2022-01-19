@@ -210,7 +210,7 @@ class OSERealtimeSensors(OSERealtime_STAO):
 
 
 class OSERealtimeObservedProperties(OSERealtime_STAO):
-    _entity_tag = 'observedproperty'
+    _entity_tag = 'observed_property'
 
     def _transform(self, request, record):
         args = self._make_location(record)
