@@ -17,7 +17,7 @@ from sta.definitions import FOOT, OM_Measurement
 
 try:
     from stao import BQSTAO, LocationGeoconnexMixin
-    from util import make_geometry_point_from_latlon
+    from util import make_geometry_point_from_latlon, asiotid
 except ImportError:
     from stao.stao import BQSTAO, LocationGeoconnexMixin
     from stao.util import make_geometry_point_from_latlon, asiotid
