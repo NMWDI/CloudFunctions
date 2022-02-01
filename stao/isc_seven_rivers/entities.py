@@ -13,12 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
+from sta.definitions import FOOT, OM_Measurement
+
 try:
     from stao import BQSTAO, LocationGeoconnexMixin
     from util import make_geometry_point_from_latlon
 except ImportError:
     from stao.stao import BQSTAO, LocationGeoconnexMixin
-    from stao.util import make_geometry_point_from_latlon
+    from stao.util import make_geometry_point_from_latlon, asiotid
 
 
 class ISCSevenRiversMonitoringPoints(BQSTAO):
@@ -64,6 +66,56 @@ class ISCSevenRiversThingsSTAO(ISCSevenRiversMonitoringPoints):
                'properties': props,
                'Locations': [{'@iot.id': location['@iot.id']}]}
         return obj
+
+
+class ISCSevenRiversSensorsSTAO(ISCSevenRiversMonitoringPoints):
+    _enitity_tag = 'sensor'
+
+    def _transform(self, request, record):
+        payload = {'name': 'NoSensor',
+                   'description': 'No Description',
+                   'encodingType': 'application/pdf',
+                   'metadata': 'No Metadata'}
+
+        return payload
+
+
+class ISCSevenRiversObservedProperties(ISCSevenRiversMonitoringPoints):
+    _entity_tag = 'observed_property'
+
+    def _transform(self, request, record):
+        payload = {'name': 'Depth to Water Below Ground Surface',
+                   'description': 'depth to water below ground surface',
+                   'definition': 'No Definition'}
+        return payload
+
+
+class ISCSevenRiversDatastreamsSTAO(ISCSevenRiversMonitoringPoints):
+    _entity_tag = 'datastream'
+
+    def _transform(self, request, record):
+
+        loc = self._client.get_location()
+        lid = loc['@iot.id']
+
+        thing = self._client.get_thing(name='WaterWell', location=lid)
+        obsprop = self._client.get_observed_properties(name='Depth to Water Below Ground Surface')
+
+        sensor = self._client.get_sensors(name='NoSensor')
+        thing_id = asiotid(thing['@iot.id'])
+        obsprop_id = asiotid(obsprop['@iot.id'])
+        sensor_id = asiotid(sensor['@iot.id'])
+        properties = {}
+        payload = [{'name': 'Groundwater Levels',
+                    'description': 'Measurement of groundwater depth in a water well, as measured below ground surface',
+                    'Thing': thing_id,
+                    'ObservedProperty':obsprop_id,
+                    'Sensor': sensor_id,
+                    'unitOfMeasurement': FOOT,
+                    'observationType': OM_Measurement,
+                    'properties': properties
+                    }]
+        return payload
 
 
 def etl_locations(request):
