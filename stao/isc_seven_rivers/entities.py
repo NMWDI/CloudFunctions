@@ -69,7 +69,7 @@ class ISCSevenRiversThingsSTAO(ISCSevenRiversMonitoringPoints):
 
 
 class ISCSevenRiversSensors(ISCSevenRiversMonitoringPoints):
-    _enitity_tag = 'sensor'
+    _entity_tag = 'sensor'
 
     def _transform(self, request, record):
         payload = {'name': 'NoSensor',
