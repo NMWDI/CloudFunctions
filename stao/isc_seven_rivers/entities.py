@@ -95,7 +95,7 @@ class ISCSevenRiversDatastreams(ISCSevenRiversMonitoringPoints):
 
     def _transform(self, request, record):
 
-        loc = self._client.get_location(f"name eq '{record['name']}'&$filter=properties/agency eq 'ISC_SEVEN_RIVERS'")
+        loc = self._client.get_location(f"name eq '{record['name']}' and properties/agency eq 'ISC_SEVEN_RIVERS'")
         if loc:
             lid = loc['@iot.id']
 
