@@ -22,6 +22,9 @@ except ImportError:
     from stao.stao import BQSTAO, LocationGeoconnexMixin
     from stao.util import make_geometry_point_from_latlon, asiotid
 
+THING_NAME = 'Water Well'
+AGENCY = 'ISC_SEVEN_RIVERS'
+
 
 class ISCSevenRiversMonitoringPoints(BQSTAO):
     _fields = ['id', 'name', 'type', 'comments', 'latitude', 'longitude', 'groundSurfaceElevationFeet']
@@ -42,7 +45,7 @@ class ISCSevenRiversLocationsSTAO(ISCSevenRiversMonitoringPoints, LocationGeocon
 
         loc = make_geometry_point_from_latlon(record['latitude'], record['longitude'])
         props = {'source_id': record['id'],
-                 'agency': 'ISC_SEVEN_RIVERS',
+                 'agency': AGENCY,
                  'source_api': 'https://nmisc-wf.gladata.com/api/getMonitoringPoints.ashx',
                  'groundSurfaceElevationFeet': record['groundSurfaceElevationFeet']}
         obj = {'name': record['name'],
@@ -61,7 +64,7 @@ class ISCSevenRiversThingsSTAO(ISCSevenRiversMonitoringPoints):
         name = record['name']
         location = self._client.get_location(f"name eq '{name}'")
         props = {'type': record['type']}
-        obj = {'name': 'Water Well',
+        obj = {'name': THING_NAME,
                'description': 'No Description',
                'properties': props,
                'Locations': [{'@iot.id': location['@iot.id']}]}
@@ -95,11 +98,11 @@ class ISCSevenRiversDatastreams(ISCSevenRiversMonitoringPoints):
 
     def _transform(self, request, record):
 
-        loc = self._client.get_location(f"name eq '{record['name']}' and properties/agency eq 'ISC_SEVEN_RIVERS'")
+        loc = self._client.get_location(f"name eq '{record['name']}' and properties/agency eq '{AGENCY}'")
         if loc:
             lid = loc['@iot.id']
 
-            thing = self._client.get_thing(name='WaterWell', location=lid)
+            thing = self._client.get_thing(name=THING_NAME, location=lid)
             if thing:
                 obsprop = next(self._client.get_observed_properties(name='Depth to Water Below Ground Surface'))
 
