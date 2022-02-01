@@ -107,9 +107,9 @@ class ISCSevenRiversDatastreams(ISCSevenRiversMonitoringPoints):
                 obsprop = next(self._client.get_observed_properties(name='Depth to Water Below Ground Surface'))
 
                 sensor = next(self._client.get_sensors(name='NoSensor'))
-                thing_id = asiotid(thing['@iot.id'])
-                obsprop_id = asiotid(obsprop['@iot.id'])
-                sensor_id = asiotid(sensor['@iot.id'])
+                thing_id = asiotid(thing)
+                obsprop_id = asiotid(obsprop)
+                sensor_id = asiotid(sensor)
                 properties = {}
                 payload = [{'name': 'Groundwater Levels',
                             'description': 'Measurement of groundwater depth in a water well, as measured below ground surface',
