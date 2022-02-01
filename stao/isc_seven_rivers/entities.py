@@ -95,27 +95,33 @@ class ISCSevenRiversDatastreams(ISCSevenRiversMonitoringPoints):
 
     def _transform(self, request, record):
 
-        loc = self._client.get_location()
-        lid = loc['@iot.id']
+        loc = self._client.get_location(f"name eq {record['name']}&$filter=properties/agency='ISC_SEVEN_RIVERS'")
+        if loc:
+            lid = loc['@iot.id']
 
-        thing = self._client.get_thing(name='WaterWell', location=lid)
-        obsprop = self._client.get_observed_properties(name='Depth to Water Below Ground Surface')
+            thing = self._client.get_thing(name='WaterWell', location=lid)
+            if thing:
+                obsprop = next(self._client.get_observed_properties(name='Depth to Water Below Ground Surface'))
 
-        sensor = self._client.get_sensors(name='NoSensor')
-        thing_id = asiotid(thing['@iot.id'])
-        obsprop_id = asiotid(obsprop['@iot.id'])
-        sensor_id = asiotid(sensor['@iot.id'])
-        properties = {}
-        payload = [{'name': 'Groundwater Levels',
-                    'description': 'Measurement of groundwater depth in a water well, as measured below ground surface',
-                    'Thing': thing_id,
-                    'ObservedProperty':obsprop_id,
-                    'Sensor': sensor_id,
-                    'unitOfMeasurement': FOOT,
-                    'observationType': OM_Measurement,
-                    'properties': properties
-                    }]
-        return payload
+                sensor = next(self._client.get_sensors(name='NoSensor'))
+                thing_id = asiotid(thing['@iot.id'])
+                obsprop_id = asiotid(obsprop['@iot.id'])
+                sensor_id = asiotid(sensor['@iot.id'])
+                properties = {}
+                payload = [{'name': 'Groundwater Levels',
+                            'description': 'Measurement of groundwater depth in a water well, as measured below ground surface',
+                            'Thing': thing_id,
+                            'ObservedProperty': obsprop_id,
+                            'Sensor': sensor_id,
+                            'unitOfMeasurement': FOOT,
+                            'observationType': OM_Measurement,
+                            'properties': properties
+                            }]
+                return payload
+            else:
+                print(f'no thing (WaterWell) for {lid}')
+        else:
+            print(f"no location for {record['name']}")
 
 
 def etl_locations(request):
