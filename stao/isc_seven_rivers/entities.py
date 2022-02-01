@@ -68,7 +68,7 @@ class ISCSevenRiversThingsSTAO(ISCSevenRiversMonitoringPoints):
         return obj
 
 
-class ISCSevenRiversSensorsSTAO(ISCSevenRiversMonitoringPoints):
+class ISCSevenRiversSensors(ISCSevenRiversMonitoringPoints):
     _enitity_tag = 'sensor'
 
     def _transform(self, request, record):
@@ -90,7 +90,7 @@ class ISCSevenRiversObservedProperties(ISCSevenRiversMonitoringPoints):
         return payload
 
 
-class ISCSevenRiversDatastreamsSTAO(ISCSevenRiversMonitoringPoints):
+class ISCSevenRiversDatastreams(ISCSevenRiversMonitoringPoints):
     _entity_tag = 'datastream'
 
     def _transform(self, request, record):

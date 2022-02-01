@@ -57,4 +57,14 @@ def ose_realtime_datastreams(request):
         ret.append(stao.render(request))
 
     return ','.join(ret)
+
+
+def isc_seven_rivers_datastreams(request):
+    from isc_seven_rivers.entities import ISCSevenRiversSensors, ISCSevenRiversObservedProperties, ISCSevenRiversDatastreams
+    ret = []
+    for k in (ISCSevenRiversSensors, ISCSevenRiversObservedProperties, ISCSevenRiversDatastreams):
+        stao = k()
+        ret.append(stao.render(request))
+
+    return ','.join(ret)
 # ============= EOF =============================================
