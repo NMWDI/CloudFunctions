@@ -28,7 +28,7 @@ try:
         ELEV_OBS_PROP, GWE_DS
 except ImportError:
     import traceback
-    traceback.print_tb()
+    traceback.print_exc()
 
 
 if os.getenv('IS_LOCAL'):
