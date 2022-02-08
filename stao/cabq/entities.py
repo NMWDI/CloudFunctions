@@ -15,18 +15,18 @@
 # ===============================================================================
 import csv
 import json
+import os
 from itertools import groupby
 
 from sta.definitions import FOOT, OM_Measurement
 from sta.util import statime
 
-try:
+if os.getenv('IS_LOCAL'):
     from stao import BuckeSTAO, ObservationMixin
     from util import make_geometry_point_from_latlon, copy_properties, asiotid
     from constants import DTW_OBS_PROP, NO_DESCRIPTION, WATER_WELL, ENCODING_GEOJSON, MANUAL_SENSOR, GWL_DS, \
         ELEV_OBS_PROP, GWE_DS
-except ImportError as e:
-    print('asdf', e)
+else:
     from stao.stao import BucketSTAO, ObservationMixin
     from stao.util import make_geometry_point_from_latlon, copy_properties, asiotid
     from stao.constants import DTW_OBS_PROP, NO_DESCRIPTION, WATER_WELL, ENCODING_GEOJSON, MANUAL_SENSOR, GWL_DS, \
