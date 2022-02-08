@@ -6,5 +6,6 @@ requests
 pyproj
 shapely
 geojson
+numpy
 
 
