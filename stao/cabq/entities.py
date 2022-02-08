@@ -25,7 +25,8 @@ try:
     from util import make_geometry_point_from_latlon, copy_properties, asiotid
     from constants import DTW_OBS_PROP, NO_DESCRIPTION, WATER_WELL, ENCODING_GEOJSON, MANUAL_SENSOR, GWL_DS, \
         ELEV_OBS_PROP, GWE_DS
-except ImportError:
+except ImportError as e:
+    print('asdf', e)
     from stao.stao import BucketSTAO, ObservationMixin
     from stao.util import make_geometry_point_from_latlon, copy_properties, asiotid
     from stao.constants import DTW_OBS_PROP, NO_DESCRIPTION, WATER_WELL, ENCODING_GEOJSON, MANUAL_SENSOR, GWL_DS, \
