@@ -22,6 +22,11 @@ import pyproj
 from sta.client import Client
 
 
+def copy_properties(props, record, attrs):
+    for a in attrs:
+        props[a] = record[a]
+
+
 # from sta.sta_client import STAClient
 def asiotid(rec):
     return {'@iot.id': rec['@iot.id']}
@@ -196,7 +201,7 @@ def make_geometry_point_from_utm(e, n, zone=None, ellps=None, srid=None):
 
 
 def make_geometry_point_from_latlon(lat, lon):
-    return {"type": "Point", "coordinates": [lon, lat]}
+    return {"type": "Point", "coordinates": [float(lon), float(lat)]}
 
 
 def make_fuzzy_geometry_from_latlon(lat, lon):

@@ -13,13 +13,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
-from google.cloud import bigquery
+import json
+
+from google.cloud import bigquery, storage
 
 try:
     from util import make_sta_client
 except ImportError:
     from stao.util import make_sta_client
 
+
+class ObservationMixin:
+    def _get_load_function_name(self):
+        return 'add_observations'
 
 
 class BaseSTAO:
@@ -46,7 +52,7 @@ class BaseSTAO:
             payloads = self._transform(request, record)
             if payloads:
                 if not isinstance(payloads, (tuple, list)):
-                    payloads = (payloads, )
+                    payloads = (payloads,)
 
                 for payload in payloads:
                     self._load_record(payload, dry)
@@ -56,14 +62,20 @@ class BaseSTAO:
         return f'Loaded {cnt} records'
 
     def _load_record(self, record, dry):
-        tag = self._entity_tag
         clt = self._client
-        funcname = f'put_{tag.lower()}'
+
+        if hasattr(self, '_get_load_function_name'):
+            funcname = self._get_load_function_name()
+        else:
+            tag = self._entity_tag
+            funcname = f'put_{tag.lower()}'
+
         func = getattr(clt, funcname)
+
         # print(f'calling {funcname} {func} {record}')
-        print(f'dry={dry} load record={record}')
+        # print(f'dry={dry} load record={record}')
         obj = func(record, dry=dry)
-        print(f'     iotid={obj.iotid}')
+        #print(f'     iotid={obj.iotid}')
         return obj
 
 
@@ -98,4 +110,24 @@ class LocationGeoconnexMixin:
 
         payload = {'properties': props}
         self._client.patch_location(iotid, payload)
+
+
+class BucketSTAO(BaseSTAO):
+    _bucket = 'waterdatainitiative'
+    _blob = None
+
+    def _get_bucket(self):
+        client = storage.Client()
+        bucket = client.get_bucket(self._bucket)
+        return bucket
+
+    def _extract(self, request):
+        print(f'extracting bucket {self._bucket}')
+        bucket = self._get_bucket()
+        blob = bucket.get_blob(self._blob)
+        jobj = json.loads(blob.download_as_bytes())
+        return self._handle_extract(jobj)
+
+    def _handle_extract(self, jobj):
+        return jobj
 # ============= EOF =============================================

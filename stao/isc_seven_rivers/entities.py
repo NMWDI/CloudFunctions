@@ -18,11 +18,12 @@ from sta.definitions import FOOT, OM_Measurement
 try:
     from stao import BQSTAO, LocationGeoconnexMixin
     from util import make_geometry_point_from_latlon, asiotid
+    from constants import DTW_OBS_PROP, WATER_WELL, GWL_DS
 except ImportError:
     from stao.stao import BQSTAO, LocationGeoconnexMixin
     from stao.util import make_geometry_point_from_latlon, asiotid
+    from stao.constants import DTW_OBS_PROP, WATER_WELL, GWL_DS
 
-THING_NAME = 'Water Well'
 AGENCY = 'ISC_SEVEN_RIVERS'
 
 
@@ -64,7 +65,7 @@ class ISCSevenRiversThingsSTAO(ISCSevenRiversMonitoringPoints):
         name = record['name']
         location = self._client.get_location(f"name eq '{name}'")
         props = {'type': record['type']}
-        obj = {'name': THING_NAME,
+        obj = {'name': WATER_WELL,
                'description': 'No Description',
                'properties': props,
                'Locations': [{'@iot.id': location['@iot.id']}]}
@@ -87,9 +88,7 @@ class ISCSevenRiversObservedProperties(ISCSevenRiversMonitoringPoints):
     _entity_tag = 'observed_property'
 
     def _transform(self, request, record):
-        payload = {'name': 'Depth to Water Below Ground Surface',
-                   'description': 'depth to water below ground surface',
-                   'definition': 'No Definition'}
+        payload = DTW_OBS_PROP
         return payload
 
 
@@ -102,24 +101,24 @@ class ISCSevenRiversDatastreams(ISCSevenRiversMonitoringPoints):
         if loc:
             lid = loc['@iot.id']
 
-            thing = self._client.get_thing(name=THING_NAME, location=lid)
+            thing = self._client.get_thing(name=WATER_WELL, location=lid)
             if thing:
-                obsprop = next(self._client.get_observed_properties(name='Depth to Water Below Ground Surface'))
+                obsprop = next(self._client.get_observed_properties(name=DTW_OBS_PROP['name']))
 
                 sensor = next(self._client.get_sensors(name='NoSensor'))
                 thing_id = asiotid(thing)
                 obsprop_id = asiotid(obsprop)
                 sensor_id = asiotid(sensor)
                 properties = {}
-                payload = [{'name': 'Groundwater Levels',
-                            'description': 'Measurement of groundwater depth in a water well, as measured below ground surface',
+                payload = { 'name': GWL_DS['name'],
+                            'description': GWL_DS['description'],
                             'Thing': thing_id,
                             'ObservedProperty': obsprop_id,
                             'Sensor': sensor_id,
                             'unitOfMeasurement': FOOT,
                             'observationType': OM_Measurement,
                             'properties': properties
-                            }]
+                            }
                 return payload
             else:
                 print(f'no thing (WaterWell) for {lid}')

@@ -18,17 +18,17 @@ import json
 import geojson
 from google.cloud import storage
 from jsonschema import validate
-from sta.definitions import OM_Measurement, FOOT
+from sta.definitions import OM_Measurement, FOOT, GPM
 
 try:
     from stao import LocationGeoconnexMixin, BQSTAO, BaseSTAO
-    from util import make_geometry_point_from_utm, make_geometry_point_from_latlon, make_fuzzy_geometry_from_latlon,\
+    from util import make_geometry_point_from_utm, make_geometry_point_from_latlon, make_fuzzy_geometry_from_latlon, \
         LOCATION_DESCRIPTION, asiotid
 except ImportError:
-    from stao.stao import LocationGeoconnexMixin, BQSTAO, BaseSTAO
+    from stao.stao import LocationGeoconnexMixin, BQSTAO, BaseSTAO, BucketSTAO
     from stao.util import make_geometry_point_from_utm, make_geometry_point_from_latlon, \
-    make_fuzzy_geometry_from_latlon, \
-    LOCATION_DESCRIPTION, asiotid
+        make_fuzzy_geometry_from_latlon, \
+        LOCATION_DESCRIPTION, asiotid
 
 
 def location_name(record):
@@ -44,22 +44,6 @@ def location_name(record):
     #         sid = ''
     #
     #     return f"{sid}{gn}"
-
-
-class BucketSTAO(BaseSTAO):
-    _bucket = 'waterdatainitiative'
-    _blob = None
-
-    def _extract(self, request):
-        print(f'extracting bucket {self._bucket}')
-        client = storage.Client()
-        bucket = client.get_bucket(self._bucket)
-        blob = bucket.get_blob(self._blob)
-        jobj = json.loads(blob.download_as_bytes())
-        return self._handle_extract(jobj)
-
-    def _handle_extract(self, jobj):
-        return jobj
 
 
 class OSERealtime_STAO(BucketSTAO):
@@ -184,10 +168,7 @@ class OSERealtimeDatastreams(OSERealtime_STAO):
                          'Sensor': sensor,
                          'ObservedProperty': dis,
                          'Thing': thing,
-                         'unitOfMeasurement': {"name": "Gallon per Minute",
-                                               "symbol": "gpm",
-                                               "definition": "http://qudt.org/vocab/unit/GAL_US-PER-MIN",
-                                               },
+                         'unitOfMeasurement': GPM,
                          'observationType': OM_Measurement,
                          },
                         {'name': "OSERealTime Gage Height",
