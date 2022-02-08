@@ -14,24 +14,17 @@
 # limitations under the License.
 # ===============================================================================
 import csv
-import json
-import os
 from itertools import groupby
 
 from sta.definitions import FOOT, OM_Measurement
 from sta.util import statime
 
 try:
-    from stao import BuckeSTAO, ObservationMixin
+    from stao import BucketSTAO, ObservationMixin
     from util import make_geometry_point_from_latlon, copy_properties, asiotid
     from constants import DTW_OBS_PROP, NO_DESCRIPTION, WATER_WELL, ENCODING_GEOJSON, MANUAL_SENSOR, GWL_DS, \
         ELEV_OBS_PROP, GWE_DS
 except ImportError:
-    import traceback
-    traceback.print_exc()
-
-
-if os.getenv('IS_LOCAL'):
     from stao.stao import BucketSTAO, ObservationMixin
     from stao.util import make_geometry_point_from_latlon, copy_properties, asiotid
     from stao.constants import DTW_OBS_PROP, NO_DESCRIPTION, WATER_WELL, ENCODING_GEOJSON, MANUAL_SENSOR, GWL_DS, \
