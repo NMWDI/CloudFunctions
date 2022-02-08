@@ -67,4 +67,11 @@ def isc_seven_rivers_datastreams(request):
         ret.append(stao.render(request))
 
     return ','.join(ret)
+
+
+def cabq_waterlevels(request):
+    from cabq.entities import CABQWaterLevels
+    stao = CABQWaterLevels()
+    ret = stao.render(request)
+    return ret
 # ============= EOF =============================================
