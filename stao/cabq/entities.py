@@ -202,7 +202,7 @@ class CABQWaterLevels(CABQSTAO, ObservationMixin):
 
                 ds = self._client.get_datastream(name=GWE_DS['name'], thing=thing['@iot.id'])
                 if ds:
-                    welev = {'Datastream': ds,
+                    welev = {'Datastream': asiotid(ds),
                              'observations': welevs,
                              'components': components
                              }
