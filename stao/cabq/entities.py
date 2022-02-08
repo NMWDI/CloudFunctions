@@ -164,7 +164,8 @@ class CABQDatastreams(CABQSTAO):
                 return payloads
 
 
-class CABQWaterLevels(CABQSTAO, ObservationMixin):
+class CABQObservations(CABQSTAO, ObservationMixin):
+    _attr = None
 
     def _extract_hook(self, reader):
         def key(r):
@@ -180,34 +181,32 @@ class CABQWaterLevels(CABQSTAO, ObservationMixin):
             if thing:
                 ds = self._client.get_datastream(name=GWL_DS['name'], thing=thing['@iot.id'])
 
-                dtws = []
-                welevs = []
+                vs = []
                 components = ['phenomenonTime', 'resultTime', 'result']
                 for obs in record['observations']:
                     t = statime(obs['measurement_date'])
-                    for attr, vs in (('water_depth', dtws), ('water_level', welevs)):
-                        v = obs['water_depth']
-                        try:
-                            v = float(v)
-                            vs.append((t, t, v))
-                        except ValueError as e:
-                            print(f'skipping. error={e}. v={v}, attr={attr}')
-                payloads = []
+
+                    v = obs[self._attr]
+                    try:
+                        v = float(v)
+                        vs.append((t, t, v))
+                    except ValueError as e:
+                        print(f'skipping. error={e}. v={v}, attr={self._attr}')
+
                 if ds:
                     dtw = {'Datastream': asiotid(ds),
-                           'observations': dtws,
+                           'observations': vs,
                            'components': components
                            }
-                    payloads.append(dtw)
+                    return dtw
 
-                ds = self._client.get_datastream(name=GWE_DS['name'], thing=thing['@iot.id'])
-                if ds:
-                    welev = {'Datastream': asiotid(ds),
-                             'observations': welevs,
-                             'components': components
-                             }
-                    payloads.append(welev)
-                return payloads
+
+class CABQWaterLevels(CABQObservations):
+    _attr = 'water_level'
+
+
+class CABQWaterDepths(CABQObservations):
+    _attr = 'water_depth'
 
 
 if __name__ == '__main__':

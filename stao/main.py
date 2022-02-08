@@ -74,4 +74,11 @@ def cabq_waterlevels(request):
     stao = CABQWaterLevels()
     ret = stao.render(request)
     return ret
+
+
+def cabq_waterdepths(request):
+    from cabq.entities import CABQWaterDepths
+    stao = CABQWaterDepths()
+    ret = stao.render(request)
+    return ret
 # ============= EOF =============================================
