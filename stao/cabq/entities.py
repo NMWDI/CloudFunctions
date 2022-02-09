@@ -35,7 +35,7 @@ AGENCY = 'CABQ'
 
 class CABQSTAO(BucketSTAO):
     _blobs = [
-                #'cabq/COA_WaterLevels_All.txt',
+              'cabq/COA_WaterLevels_All.txt',
               'cabq/waterlevels3_11_2021-9_24-pm.txt',
               'cabq/waterlevels3_22_2021-9_33-pm.txt',
               'cabq/waterlevels5_5_2021-2_46-pm.txt',
@@ -143,15 +143,15 @@ class CABQDatastreams(CABQSTAO):
                 welev_obsprop_id = asiotid(welev_obsprop)
                 sensor_id = asiotid(sensor)
                 properties = {}
-                # dtw = {'name': GWL_DS['name'],
-                #        'description': GWL_DS['description'],
-                #        'Thing': thing_id,
-                #        'ObservedProperty': obsprop_id,
-                #        'Sensor': sensor_id,
-                #        'unitOfMeasurement': FOOT,
-                #        'observationType': OM_Measurement,
-                #        'properties': properties
-                #        }
+                dtw = {'name': GWL_DS['name'],
+                       'description': GWL_DS['description'],
+                       'Thing': thing_id,
+                       'ObservedProperty': obsprop_id,
+                       'Sensor': sensor_id,
+                       'unitOfMeasurement': FOOT,
+                       'observationType': OM_Measurement,
+                       'properties': properties
+                       }
                 welev = {'name': GWE_DS['name'],
                          'description': GWE_DS['description'],
                          'Thing': thing_id,
@@ -161,8 +161,7 @@ class CABQDatastreams(CABQSTAO):
                          'observationType': OM_Measurement,
                          'properties': properties
                          }
-                # payloads = [dtw, welev]
-                payloads = [ welev]
+                payloads = [dtw, welev]
                 return payloads
 
 
