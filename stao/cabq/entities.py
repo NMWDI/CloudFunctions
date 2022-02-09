@@ -34,7 +34,8 @@ AGENCY = 'CABQ'
 
 
 class CABQSTAO(BucketSTAO):
-    _blobs = ['cabq/COA_WaterLevels_All.txt',
+    _blobs = [
+                #'cabq/COA_WaterLevels_All.txt',
               'cabq/waterlevels3_11_2021-9_24-pm.txt',
               'cabq/waterlevels3_22_2021-9_33-pm.txt',
               'cabq/waterlevels5_5_2021-2_46-pm.txt',
@@ -142,15 +143,15 @@ class CABQDatastreams(CABQSTAO):
                 welev_obsprop_id = asiotid(welev_obsprop)
                 sensor_id = asiotid(sensor)
                 properties = {}
-                dtw = {'name': GWL_DS['name'],
-                       'description': GWL_DS['description'],
-                       'Thing': thing_id,
-                       'ObservedProperty': obsprop_id,
-                       'Sensor': sensor_id,
-                       'unitOfMeasurement': FOOT,
-                       'observationType': OM_Measurement,
-                       'properties': properties
-                       }
+                # dtw = {'name': GWL_DS['name'],
+                #        'description': GWL_DS['description'],
+                #        'Thing': thing_id,
+                #        'ObservedProperty': obsprop_id,
+                #        'Sensor': sensor_id,
+                #        'unitOfMeasurement': FOOT,
+                #        'observationType': OM_Measurement,
+                #        'properties': properties
+                #        }
                 welev = {'name': GWE_DS['name'],
                          'description': GWE_DS['description'],
                          'Thing': thing_id,
@@ -160,13 +161,14 @@ class CABQDatastreams(CABQSTAO):
                          'observationType': OM_Measurement,
                          'properties': properties
                          }
-                payloads = [dtw, welev]
+                # payloads = [dtw, welev]
+                payloads = [ welev]
                 return payloads
 
 
 class CABQObservations(CABQSTAO, ObservationMixin):
     _attr = None
-
+    _name = None
     def _extract_hook(self, reader):
         def key(r):
             return r['sys_loc_code']
@@ -179,7 +181,7 @@ class CABQObservations(CABQSTAO, ObservationMixin):
         if loc:
             thing = self._client.get_thing(name='Water Well', location=loc['@iot.id'])
             if thing:
-                ds = self._client.get_datastream(name=GWL_DS['name'], thing=thing['@iot.id'])
+                ds = self._client.get_datastream(name=self._name, thing=thing['@iot.id'])
 
                 vs = []
                 components = ['phenomenonTime', 'resultTime', 'result']
@@ -203,10 +205,12 @@ class CABQObservations(CABQSTAO, ObservationMixin):
 
 class CABQWaterElevations(CABQObservations):
     _attr = 'water_level'
+    _name = GWE_DS['name']
 
 
 class CABQWaterDepths(CABQObservations):
     _attr = 'water_depth'
+    _name = GWL_DS['name']
 
 
 if __name__ == '__main__':
@@ -215,8 +219,8 @@ if __name__ == '__main__':
 
     # c = CABQSensors()
     # c = CABQObservedProperties()
-    # c = CABQDatastreams()
-    c = CABQWaterLevels()
+    c = CABQDatastreams()
+    # c = CABQWaterElevations()
     c.render(None)
 
 # ============= EOF =============================================
