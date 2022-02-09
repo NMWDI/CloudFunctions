@@ -40,6 +40,6 @@ MANUAL_SENSOR = {'name': 'Manual',
 GWL_DS = {'name': 'Groundwater Levels',
           'description': 'Measurement of groundwater depth in a water well, as measured below ground surface'}
 
-GWE_DS = {'name': 'Groundwater Elevation',
+GWE_DS = {'name': 'Groundwater Elevations',
           'description': 'Elevation of groundwater in feet above msl'}
 # ============= EOF =============================================

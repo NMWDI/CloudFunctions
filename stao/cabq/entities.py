@@ -201,7 +201,7 @@ class CABQObservations(CABQSTAO, ObservationMixin):
                     return dtw
 
 
-class CABQWaterLevels(CABQObservations):
+class CABQWaterElevations(CABQObservations):
     _attr = 'water_level'
 
 
