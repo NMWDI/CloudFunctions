@@ -28,6 +28,14 @@ class ObservationMixin:
         return 'add_observations'
 
 
+class SimpleSTAO:
+    def render(self, tag, payload):
+        client = make_sta_client()
+
+        func = getattr(client, f'put_{tag}')
+        func(payload)
+
+
 class BaseSTAO:
     def __init__(self):
         self._client = make_sta_client()
@@ -82,7 +90,6 @@ class BaseSTAO:
         # print(f'calling {funcname} {func} {record}')
         # print(f'dry={dry} load record={record}')
         obj = func(payload, dry=dry)
-
 
         # print(f'     iotid={obj.iotid}')
         return obj

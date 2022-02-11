@@ -110,18 +110,19 @@ class CABQThings(CABQSTAO):
         return payload
 
 
-class CABQSensors(CABQSTAO):
-    _entity_tag = 'sensor'
-
-    def _transform(self, request, record):
-        return MANUAL_SENSOR
-
-
-class CABQObservedProperties(CABQSTAO):
-    _entity_tag = 'observed_property'
-
-    def _transform(self, request, record):
-        return [DTW_OBS_PROP, ELEV_OBS_PROP]
+# use SimpleSTAO instead
+# class CABQSensors(CABQSTAO):
+#     _entity_tag = 'sensor'
+#
+#     def _transform(self, request, record):
+#         return MANUAL_SENSOR
+#
+#
+# class CABQObservedProperties(CABQSTAO):
+#     _entity_tag = 'observed_property'
+#
+#     def _transform(self, request, record):
+#         return [DTW_OBS_PROP, ELEV_OBS_PROP]
 
 
 class CABQDatastreams(CABQSTAO):

@@ -14,6 +14,14 @@
 # limitations under the License.
 # ===============================================================================
 
+try:
+    from constants import NO_DESCRIPTION, MANUAL_SENSOR, DTW_OBS_PROP
+    from stao import SimpleSTAO
+except ImportError:
+    from stao.constants import NO_DESCRIPTION, MANUAL_SENSOR, DTW_OBS_PROP
+    from stao.stao import SimpleSTAO
+
+
 def isc_seven_rivers_locations(request):
     from isc_seven_rivers.entities import etl_locations
     return etl_locations(request)
@@ -33,6 +41,17 @@ def nmbgmr_locations(request):
 def nmbgmr_things(request):
     from nmbgmr.entities import NMBGMRThings
     stao = NMBGMRThings()
+    return stao.render(request)
+
+
+def nmbgmr_manual_waterlevel_datastreams(request):
+    from nmbgmr.entities import NMBGMRManualWaterLevelsDatastreams
+    stao = NMBGMRManualWaterLevelsDatastreams()
+
+    ss = SimpleSTAO()
+    ss.render('sensor', MANUAL_SENSOR)
+    ss.render('observed_property', DTW_OBS_PROP)
+
     return stao.render(request)
 
 
