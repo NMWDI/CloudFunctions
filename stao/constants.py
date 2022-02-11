@@ -30,6 +30,7 @@ ENCODING_GEOJSON = "application/vnd.geo+json"
 ENCODING_PDF = "application/pdf"
 
 WATER_WELL = 'Water Well'
+WATER_QUANTITY = 'Water Quantity'
 
 MANUAL_SENSOR = {'name': 'Manual',
                  'description': NO_DESCRIPTION,

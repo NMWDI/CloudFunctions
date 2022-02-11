@@ -23,12 +23,12 @@ try:
     from stao import BucketSTAO, ObservationMixin
     from util import make_geometry_point_from_latlon, copy_properties, asiotid
     from constants import DTW_OBS_PROP, NO_DESCRIPTION, WATER_WELL, ENCODING_GEOJSON, MANUAL_SENSOR, GWL_DS, \
-        ELEV_OBS_PROP, GWE_DS
+        ELEV_OBS_PROP, GWE_DS, WATER_QUANTITY
 except ImportError:
     from stao.stao import BucketSTAO, ObservationMixin
     from stao.util import make_geometry_point_from_latlon, copy_properties, asiotid
     from stao.constants import DTW_OBS_PROP, NO_DESCRIPTION, WATER_WELL, ENCODING_GEOJSON, MANUAL_SENSOR, GWL_DS, \
-        ELEV_OBS_PROP, GWE_DS
+        ELEV_OBS_PROP, GWE_DS, WATER_QUANTITY
 
 AGENCY = 'CABQ'
 
@@ -142,7 +142,8 @@ class CABQDatastreams(CABQSTAO):
                 obsprop_id = asiotid(obsprop)
                 welev_obsprop_id = asiotid(welev_obsprop)
                 sensor_id = asiotid(sensor)
-                properties = {}
+                properties = {'agency': AGENCY,
+                              'topic': WATER_QUANTITY}
                 dtw = {'name': GWL_DS['name'],
                        'description': GWL_DS['description'],
                        'Thing': thing_id,

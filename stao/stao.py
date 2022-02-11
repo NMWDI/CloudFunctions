@@ -31,6 +31,7 @@ class ObservationMixin:
 class BaseSTAO:
     def __init__(self):
         self._client = make_sta_client()
+        self.state = {}
 
     def render(self, request, dry=False):
         resp = None
@@ -48,7 +49,8 @@ class BaseSTAO:
 
     def _load(self, request, records, dry):
         cnt = 0
-        for record in records:
+        for i, record in enumerate(records):
+            print(f'transform record {i}')
             payloads = self._transform(request, record)
             if payloads:
                 if not isinstance(payloads, (tuple, list)):
@@ -59,9 +61,14 @@ class BaseSTAO:
                     cnt += 1
             else:
                 print(f'skipping {record}')
+
+        if record:
+            state = {'OBJECTID': record['OBJECTID']}
+            self.state = state
+
         return f'Loaded {cnt} records'
 
-    def _load_record(self, record, dry):
+    def _load_record(self, payload, dry):
         clt = self._client
 
         if hasattr(self, '_get_load_function_name'):
@@ -74,8 +81,10 @@ class BaseSTAO:
 
         # print(f'calling {funcname} {func} {record}')
         # print(f'dry={dry} load record={record}')
-        obj = func(record, dry=dry)
-        #print(f'     iotid={obj.iotid}')
+        obj = func(payload, dry=dry)
+
+
+        # print(f'     iotid={obj.iotid}')
         return obj
 
 
@@ -83,9 +92,13 @@ class BQSTAO(BaseSTAO):
     _fields = None
     _dataset = None
     _tablename = None
+    _limit = None
+    _orderby = None
 
     def _extract(self, request):
-        return self._get_bq_items(self._fields, self._dataset, self._tablename, where=None)
+        where = request.json().get('where')
+        print('asdfas', where)
+        return self._handle_extract(self._get_bq_items(self._fields, self._dataset, self._tablename, where=where))
 
     def _bq_query(self, sql, **kw):
         client = bigquery.Client()
@@ -97,8 +110,16 @@ class BQSTAO(BaseSTAO):
         sql = f'select {fs} from {dataset}.{tablename}'
         # if where:
         #     sql = f'{sql} where {where}'
+        if self._orderby:
+            sql = f'{sql} order by {self._orderby}'
+
+        if self._limit:
+            sql = f'{sql} limit {self._limit}'
 
         return self._bq_query(sql)
+
+    def _handle_extract(self, records):
+        return records
 
 
 class LocationGeoconnexMixin:

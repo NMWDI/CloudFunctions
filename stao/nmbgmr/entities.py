@@ -13,12 +13,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
+from sta.definitions import FOOT, OM_Measurement
+
 try:
     from stao import BQSTAO, LocationGeoconnexMixin
-    from util import make_geometry_point_from_utm
+    from util import make_geometry_point_from_utm, asiotid
+    from constants import GWL_DS, DTW_OBS_PROP, MANUAL_SENSOR
 except ImportError:
     from stao.stao import BQSTAO, LocationGeoconnexMixin
-    from stao.util import make_geometry_point_from_utm
+    from stao.util import make_geometry_point_from_utm, asiotid
+    from stao.constants import GWL_DS, DTW_OBS_PROP, MANUAL_SENSOR
 
 
 class NMBGMR_Site_STAO(BQSTAO):
@@ -89,7 +93,69 @@ class NMBGMRThings(NMBGMR_Site_STAO):
         return payload
 
 
-#
+class NMBGMRWaterLevelDatastreams(BQSTAO):
+    # _fields = ['Easting', 'PointID', 'AltDatum', 'Altitude', 'WellID',
+    #            'Northing', 'OBJECTID', 'SiteNames', 'WellDepth', 'CurrentUseDescription',
+    #            'StatusDescription', 'FormationZone']
+
+    _dataset = 'levels'
+    _entity_tag = 'datastream'
+
+    def _get_bq_items(self, fields, dataset, tablename, where=None):
+        if 'OBJECTID' not in fields:
+            fields.append('OBJECTID')
+
+        fs = ','.join(fields)
+
+        subquery = f'''(select *, row_number() over (PARTITION by PointID ORDER BY OBJECTID asc) rn
+        from {dataset}.{tablename}) x'''
+        sql = f'select {fs} from {subquery} where x.rn=1 '
+        if where:
+            sql = f'{sql} and {where}'
+
+        sql = f'{sql} order by OBJECTID asc'
+
+        if self._limit:
+            sql = f'{sql} limit {self._limit}'
+
+        return self._bq_query(sql)
+
+
+class NMBGMRManualWaterLevelsDatastreams(NMBGMRWaterLevelDatastreams):
+    _tablename = 'nmbgmrManualGWL'
+    _fields = ['OBJECTID', 'PointID', 'DepthToWater', 'DepthToWaterBGS', 'DateTimeMeasured',
+               'MeasuringAgency', 'MeasurementMethod', 'LevelStatus', 'DataSource', 'DataQuality']
+    _limit = 500
+
+    def _transform(self, request, record):
+        pointid = record['PointID']
+
+        q = f"name eq '{pointid}' and properties/agency eq 'NMBGMR'"
+        try:
+            loc = self._client.get_location(query=q)
+        except StopIteration:
+            print(f'------------ failed locating {pointid}')
+            return
+
+        thing = self._client.get_thing(location=loc['@iot.id'], name='Water Well')
+        if thing:
+            obsprop = next(self._client.get_observed_properties(name=DTW_OBS_PROP['name']))
+            sensor = next(self._client.get_sensors(name=MANUAL_SENSOR['name']))
+            properties = {}
+            dtwbgs = {'name': GWL_DS['name'],
+                      'description': GWL_DS['description'],
+                      'Sensor': asiotid(sensor),
+                      'ObservedProperty': asiotid(obsprop),
+                      'Thing': asiotid(thing),
+                      'unitOfMeasurement': FOOT,
+                      'observationType': OM_Measurement,
+                      'properties': properties
+                      }
+            return dtwbgs
+        # payloads = [dtw, dtwbgs]
+        # return payloads
+
+
 # def make_screens(client, objectid, dataset, site_table_name):
 #     # dataset = Variable.get('bq_locations')
 #     # table_name = Variable.get('nmbgmr_screen_tbl')
@@ -224,5 +290,25 @@ class NMBGMRThings(NMBGMR_Site_STAO):
 #     #     previous_max_objectid = 0
 #     #
 #     # return previous_max_objectid
+
+class DummyRequest:
+    def __init__(self, p):
+        self._p = p
+
+    def json(self):
+        return self._p
+
+
+if __name__ == '__main__':
+    c = NMBGMRManualWaterLevelsDatastreams()
+    for i in range(2):
+        if i:
+            OBJECTID = c.state['OBJECTID']
+            rr = {'where': f'OBJECTID>{OBJECTID}'}
+        else:
+            rr = {}
+
+        r = DummyRequest(rr)
+        c.render(r, dry=True)
 
 # ============= EOF =============================================
