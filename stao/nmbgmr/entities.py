@@ -295,20 +295,25 @@ class DummyRequest:
     def __init__(self, p):
         self._p = p
 
+    @property
     def json(self):
         return self._p
 
 
 if __name__ == '__main__':
-    c = NMBGMRManualWaterLevelsDatastreams()
-    for i in range(2):
-        if i:
-            OBJECTID = c.state['OBJECTID']
-            rr = {'where': f'OBJECTID>{OBJECTID}'}
-        else:
-            rr = {}
 
-        r = DummyRequest(rr)
-        c.render(r, dry=True)
+    c = NMBGMRLocations()
+    c.render(None)
+
+    # c = NMBGMRManualWaterLevelsDatastreams()
+    # for i in range(2):
+    #     if i:
+    #         OBJECTID = c.state['OBJECTID']
+    #         rr = {'where': f'OBJECTID>{OBJECTID}'}
+    #     else:
+    #         rr = {}
+    #
+    #     r = DummyRequest(rr)
+    #     c.render(r, dry=True)
 
 # ============= EOF =============================================
