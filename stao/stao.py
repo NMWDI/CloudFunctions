@@ -103,8 +103,7 @@ class BQSTAO(BaseSTAO):
     _orderby = None
 
     def _extract(self, request):
-        where = request.json().get('where')
-        print('asdfas', where)
+        where = request.json.get('where')
         return self._handle_extract(self._get_bq_items(self._fields, self._dataset, self._tablename, where=where))
 
     def _bq_query(self, sql, **kw):
