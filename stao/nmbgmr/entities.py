@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
+import json
+
 from sta.definitions import FOOT, OM_Measurement
 
 try:
@@ -32,6 +34,12 @@ class NMBGMR_Site_STAO(BQSTAO):
 
     _dataset = 'locations'
     _tablename = 'nmbgmrSiteMetaData'
+
+    _limit = 1000
+    _orderby = 'OBJECTID asc'
+
+    def _transform_message(self, record):
+        return f"OBJECTID={record['OBJECTID']}"
 
 
 class NMBGMRLocations(NMBGMR_Site_STAO, LocationGeoconnexMixin):
@@ -303,7 +311,14 @@ class DummyRequest:
 if __name__ == '__main__':
 
     c = NMBGMRLocations()
-    c.render(None)
+    c._limit = 10
+    for i in range(2):
+        if i:
+            state = json.loads(ret)
+            dr = DummyRequest({'where': f"OBJECTID>{state['OBJECTID']}"})
+        else:
+            dr = DummyRequest({})
+        ret = c.render(dr)
 
     # c = NMBGMRManualWaterLevelsDatastreams()
     # for i in range(2):

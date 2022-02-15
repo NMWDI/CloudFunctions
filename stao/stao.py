@@ -55,10 +55,13 @@ class BaseSTAO:
     def _transform(self, request, record):
         return record
 
+    def _transform_message(self, record):
+        return record
+
     def _load(self, request, records, dry):
         cnt = 0
         for i, record in enumerate(records):
-            print(f'transform record {i}')
+            print(f'transform record {i} {self._transform_message(record)}')
             payloads = self._transform(request, record)
             if payloads:
                 if not isinstance(payloads, (tuple, list)):
@@ -74,7 +77,7 @@ class BaseSTAO:
             state = {'OBJECTID': record['OBJECTID']}
             self.state = state
 
-        return f'Loaded {cnt} records'
+        return json.dumps(self.state)
 
     def _load_record(self, payload, dry):
         clt = self._client
@@ -103,9 +106,11 @@ class BQSTAO(BaseSTAO):
     _orderby = None
 
     def _extract(self, request):
-        where = None
-        if request:
+        try:
             where = request.json.get('where')
+        except (ValueError, AttributeError):
+            where = None
+
         return self._handle_extract(self._get_bq_items(self._fields, self._dataset, self._tablename, where=where))
 
     def _bq_query(self, sql, **kw):
@@ -116,8 +121,9 @@ class BQSTAO(BaseSTAO):
     def _get_bq_items(self, fields, dataset, tablename, where=None):
         fs = ','.join(fields)
         sql = f'select {fs} from {dataset}.{tablename}'
-        # if where:
-        #     sql = f'{sql} where {where}'
+        if where:
+            sql = f'{sql} where {where}'
+
         if self._orderby:
             sql = f'{sql} order by {self._orderby}'
 
