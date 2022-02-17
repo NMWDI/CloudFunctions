@@ -37,6 +37,8 @@ class SimpleSTAO:
 
 
 class BaseSTAO:
+    _limit = None
+
     def __init__(self):
         self._client = make_sta_client()
         self.state = {}
@@ -74,7 +76,8 @@ class BaseSTAO:
                 print(f'skipping {record}')
 
         if record:
-            state = {'OBJECTID': record['OBJECTID']}
+            state = {'OBJECTID': record['OBJECTID'],
+                     'limit': self._limit}
             self.state = state
 
         return json.dumps(self.state)
@@ -102,7 +105,6 @@ class BQSTAO(BaseSTAO):
     _fields = None
     _dataset = None
     _tablename = None
-    _limit = None
     _orderby = None
 
     def _extract(self, request):
@@ -110,7 +112,10 @@ class BQSTAO(BaseSTAO):
             where = request.json.get('where')
         except (ValueError, AttributeError):
             where = None
-
+        try:
+            self._limit = int(request.json.get('limit'))
+        except (ValueError, AttributeError):
+            pass
         return self._handle_extract(self._get_bq_items(self._fields, self._dataset, self._tablename, where=where))
 
     def _bq_query(self, sql, **kw):
