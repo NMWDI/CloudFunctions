@@ -80,7 +80,7 @@ class BaseSTAO:
                      'limit': self._limit}
             self.state = state
 
-        return json.dumps(self.state)
+        return self.state
 
     def _load_record(self, payload, dry):
         clt = self._client

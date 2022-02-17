@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
-import functions_framework
 
 try:
     from constants import NO_DESCRIPTION, MANUAL_SENSOR, DTW_OBS_PROP
@@ -33,7 +32,6 @@ def isc_seven_rivers_things(request):
     return etl_things(request)
 
 
-@functions_framework.http
 def nmbgmr_locations(request):
     from nmbgmr.entities import NMBGMRLocations
     stao = NMBGMRLocations()
