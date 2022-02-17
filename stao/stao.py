@@ -80,7 +80,6 @@ class BaseSTAO:
             else:
                 print(f'skipping {record}')
 
-        if record:
             state = {'OBJECTID': record['OBJECTID'],
                      'limit': self._limit}
             self.state = state
