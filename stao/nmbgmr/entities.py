@@ -35,7 +35,7 @@ class NMBGMR_Site_STAO(BQSTAO):
     _dataset = 'locations'
     _tablename = 'nmbgmrSiteMetaData'
 
-    _limit = 1000
+    _limit = 100
     _orderby = 'OBJECTID asc'
 
     def _transform_message(self, record):
