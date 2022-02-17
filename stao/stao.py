@@ -111,7 +111,11 @@ class BQSTAO(BaseSTAO):
         try:
             where = request.json.get('where')
         except (ValueError, AttributeError):
-            where = None
+            try:
+                obj = int(request.json.get('OBJECTID'))
+                where = f"OBJECTID>{obj}"
+            except (ValueError, AttributeError):
+                where = None
         try:
             self._limit = int(request.json.get('limit'))
         except (ValueError, AttributeError):
