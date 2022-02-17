@@ -108,7 +108,7 @@ class BQSTAO(BaseSTAO):
     _orderby = None
 
     def _extract(self, request):
-        print('request {} {} {}'.format(request, request.json if request else 'no json'))
+        print('request {} {}'.format(request, request.json if request else 'no json'))
         try:
             where = request.json.get('where')
         except (ValueError, AttributeError) as e:
