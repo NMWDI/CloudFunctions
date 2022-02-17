@@ -44,10 +44,15 @@ class BaseSTAO:
         self.state = {}
 
     def render(self, request, dry=False):
-        resp = None
+        if request:
+            if request.json:
+                self.state = request.json
+
         data = self._extract(request)
         if data:
             resp = self._load(request, data, dry)
+        else:
+            resp = self.state
 
         return resp
 
