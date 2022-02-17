@@ -119,7 +119,7 @@ class BQSTAO(BaseSTAO):
             try:
                 obj = int(request.json.get('OBJECTID'))
                 where = f"OBJECTID>{obj}"
-            except (ValueError, AttributeError) as e:
+            except (ValueError, AttributeError, TypeError) as e:
                 print('error b {}'.format(e))
                 where = None
 
