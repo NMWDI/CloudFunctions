@@ -108,21 +108,27 @@ class BQSTAO(BaseSTAO):
     _orderby = None
 
     def _extract(self, request):
-        print('request', request, request.json if request else 'no json')
+        print('request {} {} {}'.format(request, request.json if request else 'no json'))
         try:
             where = request.json.get('where')
-        except (ValueError, AttributeError):
+        except (ValueError, AttributeError) as e:
+            print('error a {}'.format(e))
+            where = None
+
+        if not where:
             try:
                 obj = int(request.json.get('OBJECTID'))
                 where = f"OBJECTID>{obj}"
-            except (ValueError, AttributeError):
+            except (ValueError, AttributeError) as e:
+                print('error b {}'.format(e))
                 where = None
+
         try:
             self._limit = int(request.json.get('limit'))
         except (ValueError, AttributeError):
             pass
 
-        print('where', where, self._limit)
+        print('where {} {}'.format(where, self._limit))
         return self._handle_extract(self._get_bq_items(self._fields, self._dataset, self._tablename, where=where))
 
     def _bq_query(self, sql, **kw):
