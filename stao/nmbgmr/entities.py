@@ -139,9 +139,8 @@ class NMBGMRManualWaterLevelsDatastreams(NMBGMRWaterLevelDatastreams):
         pointid = record['PointID']
 
         q = f"name eq '{pointid}' and properties/agency eq 'NMBGMR'"
-        try:
-            loc = self._client.get_location(query=q)
-        except StopIteration:
+        loc = self._client.get_location(query=q)
+        if not loc:
             print(f'------------ failed locating {pointid}')
             return
 
