@@ -42,7 +42,7 @@ class NMBGMR_Site_STAO(BQSTAO):
         return f"OBJECTID={record['OBJECTID']}"
 
 
-class NMBGMRLocations(NMBGMR_Site_STAO, LocationGeoconnexMixin):
+class NMBGMRLocations(LocationGeoconnexMixin, NMBGMR_Site_STAO):
     _entity_tag = 'location'
 
     def _transform(self, request, record):
@@ -310,14 +310,14 @@ class DummyRequest:
 if __name__ == '__main__':
 
     c = NMBGMRLocations()
-    c._limit = 10
-    for i in range(2):
+    c._limit = 1
+    for i in range(1):
         if i:
-            state = json.loads(ret)
+            # state = json.loads(ret)
             dr = DummyRequest({'where': f"OBJECTID>{state['OBJECTID']}"})
         else:
             dr = DummyRequest({})
-        ret = c.render(dr)
+        state = c.render(dr)
 
     # c = NMBGMRManualWaterLevelsDatastreams()
     # for i in range(2):

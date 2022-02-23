@@ -129,7 +129,7 @@ class BQSTAO(BaseSTAO):
 
         try:
             self._limit = int(request.json.get('limit'))
-        except (ValueError, AttributeError):
+        except (ValueError, AttributeError, TypeError):
             pass
 
         print('where {} {}'.format(where, self._limit))
@@ -159,13 +159,12 @@ class BQSTAO(BaseSTAO):
 
 
 class LocationGeoconnexMixin:
-    def _load_record(self, record):
-        obj = super(LocationGeoconnexMixin, self)._load_record(record)
+    def _load_record(self, payload, *args, **kw):
+        obj = super(LocationGeoconnexMixin, self)._load_record(payload, *args, **kw)
         iotid = obj.iotid
-        props = record['properties']
+        props = payload['properties']
         props['geoconnex'] = f'https://geoconnex.us/nmwdi/st/locations/{iotid}'
 
-        payload = {'properties': props}
         self._client.patch_location(iotid, payload)
 
 
