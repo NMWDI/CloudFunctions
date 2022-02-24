@@ -38,6 +38,14 @@ MANUAL_SENSOR = {'name': 'Manual',
                  'metadata': NO_METADATA
                  }
 
+PRESSURE_SENSOR = {'name': 'Pressure',
+                   'description': '''Continuous (periodic automated) measurement depth to water in Feet below ground 
+                   surface (converted from pressure reading from depth below ground surface in feet). Not 
+                   Provisional. Quality Controlled ''',
+                   'encodingType': ENCODING_PDF,
+                   'metadata': NO_METADATA
+                   }
+
 GWL_DS = {'name': 'Groundwater Levels',
           'description': 'Measurement of groundwater depth in a water well, as measured below ground surface'}
 

@@ -20,11 +20,11 @@ from sta.definitions import FOOT, OM_Measurement
 try:
     from stao import BQSTAO, LocationGeoconnexMixin
     from util import make_geometry_point_from_utm, asiotid
-    from constants import GWL_DS, DTW_OBS_PROP, MANUAL_SENSOR
+    from constants import GWL_DS, DTW_OBS_PROP, MANUAL_SENSOR, PRESSURE_SENSOR
 except ImportError:
     from stao.stao import BQSTAO, LocationGeoconnexMixin
     from stao.util import make_geometry_point_from_utm, asiotid
-    from stao.constants import GWL_DS, DTW_OBS_PROP, MANUAL_SENSOR
+    from stao.constants import GWL_DS, DTW_OBS_PROP, MANUAL_SENSOR, PRESSURE_SENSOR
 
 
 class NMBGMR_Site_STAO(BQSTAO):
@@ -131,7 +131,7 @@ class NMBGMRWaterLevelDatastreams(BQSTAO):
 
 class NMBGMRManualWaterLevelsDatastreams(NMBGMRWaterLevelDatastreams):
     _tablename = 'nmbgmrManualGWL'
-    _fields = ['OBJECTID', 'PointID', 'DepthToWater', 'DepthToWaterBGS', 'DateTimeMeasured',
+    _fields = ['OBJECTID', 'PointID',
                'MeasuringAgency', 'MeasurementMethod', 'LevelStatus', 'DataSource', 'DataQuality']
     _limit = 500
 
@@ -161,6 +161,39 @@ class NMBGMRManualWaterLevelsDatastreams(NMBGMRWaterLevelDatastreams):
             return dtwbgs
         # payloads = [dtw, dtwbgs]
         # return payloads
+
+
+class NMBGMRPressureWaterLevelsDatastreams(NMBGMRWaterLevelDatastreams):
+    _tablename = 'nmbgmrPressureGWL'
+    _fields = ['OBJECTID', 'PointID',
+               'MeasuringAgency', 'MeasurementMethod', 'DataSource', 'DataSource']
+    _limit = 500
+
+    def _transform(self, request, record):
+        pointid = record['PointID']
+
+        q = f"name eq '{pointid}' and properties/agency eq 'NMBGMR'"
+        loc = self._client.get_location(query=q)
+        if not loc:
+            print(f'------------ failed locating {pointid}')
+            return
+
+        thing = self._client.get_thing(location=loc['@iot.id'], name='Water Well')
+        if thing:
+            obsprop = next(self._client.get_observed_properties(name=DTW_OBS_PROP['name']))
+            sensor = next(self._client.get_sensors(name=PRESSURE_SENSOR['name']))
+            properties = {'MeasuringAgency': record['MeasuringAgency'],
+                          'DataSource': record['DataSource']}
+            dtwbgs = {'name': GWL_DS['name'],
+                      'description': GWL_DS['description'],
+                      'Sensor': asiotid(sensor),
+                      'ObservedProperty': asiotid(obsprop),
+                      'Thing': asiotid(thing),
+                      'unitOfMeasurement': FOOT,
+                      'observationType': OM_Measurement,
+                      'properties': properties
+                      }
+            return dtwbgs
 
 
 # def make_screens(client, objectid, dataset, site_table_name):
@@ -309,8 +342,9 @@ class DummyRequest:
 
 if __name__ == '__main__':
 
-    c = NMBGMRLocations()
-    c._limit = 1
+    # c = NMBGMRLocations()
+    c = NMBGMRPressureWaterLevelsDatastreams()
+    c._limit = 10
     for i in range(1):
         if i:
             # state = json.loads(ret)
