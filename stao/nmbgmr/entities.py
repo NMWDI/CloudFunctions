@@ -20,11 +20,11 @@ from sta.definitions import FOOT, OM_Measurement
 try:
     from stao import BQSTAO, LocationGeoconnexMixin
     from util import make_geometry_point_from_utm, asiotid
-    from constants import GWL_DS, DTW_OBS_PROP, MANUAL_SENSOR, PRESSURE_SENSOR, WATER_QUANTITY
+    from constants import GWL_DS, DTW_OBS_PROP, MANUAL_SENSOR, PRESSURE_SENSOR, WATER_QUANTITY, ACOUSTIC_SENSOR
 except ImportError:
     from stao.stao import BQSTAO, LocationGeoconnexMixin
     from stao.util import make_geometry_point_from_utm, asiotid
-    from stao.constants import GWL_DS, DTW_OBS_PROP, MANUAL_SENSOR, PRESSURE_SENSOR, WATER_QUANTITY
+    from stao.constants import GWL_DS, DTW_OBS_PROP, MANUAL_SENSOR, PRESSURE_SENSOR, WATER_QUANTITY, ACOUSTIC_SENSOR
 
 
 class NMBGMR_Site_STAO(BQSTAO):
@@ -130,7 +130,7 @@ class NMBGMRWaterLevelDatastreams(BQSTAO):
 
 
 class NMBGMRManualWaterLevelsDatastreams(NMBGMRWaterLevelDatastreams):
-    _tablename = 'nmbgmrManualGWL'
+    _tablename = 'nmbgmr_manual_gwl'
     _fields = ['OBJECTID', 'PointID',
                'MeasuringAgency', 'MeasurementMethod', 'LevelStatus', 'DataSource', 'DataQuality']
     _limit = 500
@@ -164,7 +164,7 @@ class NMBGMRManualWaterLevelsDatastreams(NMBGMRWaterLevelDatastreams):
 
 
 class NMBGMRPressureWaterLevelsDatastreams(NMBGMRWaterLevelDatastreams):
-    _tablename = 'nmbgmrPressureGWL'
+    _tablename = 'pressure_gwl'
     _fields = ['OBJECTID', 'PointID',
                'MeasuringAgency', 'MeasurementMethod', 'DataSource', 'DataSource']
     _limit = 500
@@ -198,6 +198,41 @@ class NMBGMRPressureWaterLevelsDatastreams(NMBGMRWaterLevelDatastreams):
                       }
             return dtwbgs
 
+
+class NMBGMRAcousticWaterLevelsDatastreams(NMBGMRWaterLevelDatastreams):
+    _tablename = 'acoustic_gwl'
+    _fields = ['OBJECTID', 'PointID',
+               'MeasuringAgency', 'MeasurementMethod', 'DataSource', 'DataSource']
+    _limit = 500
+
+    def _transform(self, request, record):
+        pointid = record['PointID']
+
+        q = f"name eq '{pointid}' and properties/agency eq 'NMBGMR'"
+        loc = self._client.get_location(query=q)
+        if not loc:
+            print(f'------------ failed locating {pointid}')
+            return
+
+        thing = self._client.get_thing(location=loc['@iot.id'], name='Water Well')
+        if thing:
+            obsprop = next(self._client.get_observed_properties(name=DTW_OBS_PROP['name']))
+            sensor = next(self._client.get_sensors(name=ACOUSTIC_SENSOR['name']))
+            properties = {'MeasuringAgency': record['MeasuringAgency'],
+                          'DataSource': record['DataSource'],
+                          'agency': 'NMBGMR',
+                          'topic': WATER_QUANTITY}
+
+            dtwbgs = {'name': GWL_DS['name'],
+                      'description': GWL_DS['description'],
+                      'Sensor': asiotid(sensor),
+                      'ObservedProperty': asiotid(obsprop),
+                      'Thing': asiotid(thing),
+                      'unitOfMeasurement': FOOT,
+                      'observationType': OM_Measurement,
+                      'properties': properties
+                      }
+            return dtwbgs
 
 # def make_screens(client, objectid, dataset, site_table_name):
 #     # dataset = Variable.get('bq_locations')
@@ -346,7 +381,7 @@ class DummyRequest:
 if __name__ == '__main__':
 
     # c = NMBGMRLocations()
-    c = NMBGMRPressureWaterLevelsDatastreams()
+    c = NMBGMRAcousticWaterLevelsDatastreams()
     c._limit = 500
     for i in range(1):
         if i:

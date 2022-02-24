@@ -46,6 +46,13 @@ PRESSURE_SENSOR = {'name': 'Pressure',
                    'metadata': NO_METADATA
                    }
 
+ACOUSTIC_SENSOR = {'name': 'Acoustic',
+                   'description': '''Continuous (periodic automated) measurement depth to water in Feet below ground 
+surface (converted from acoustic device). Not Provisional. Quality Controlled''',
+                   'encodingType': ENCODING_PDF,
+                   'metadata': NO_METADATA
+                   }
+
 GWL_DS = {'name': 'Groundwater Levels',
           'description': 'Measurement of groundwater depth in a water well, as measured below ground surface'}
 

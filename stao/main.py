@@ -15,10 +15,10 @@
 # ===============================================================================
 
 try:
-    from constants import NO_DESCRIPTION, MANUAL_SENSOR, DTW_OBS_PROP, PRESSURE_SENSOR
+    from constants import NO_DESCRIPTION, MANUAL_SENSOR, DTW_OBS_PROP, PRESSURE_SENSOR, ACOUSTIC_SENSOR
     from stao import SimpleSTAO
 except ImportError:
-    from stao.constants import NO_DESCRIPTION, MANUAL_SENSOR, DTW_OBS_PROP, PRESSURE_SENSOR
+    from stao.constants import NO_DESCRIPTION, MANUAL_SENSOR, DTW_OBS_PROP, PRESSURE_SENSOR, ACOUSTIC_SENSOR
     from stao.stao import SimpleSTAO
 
 
@@ -61,6 +61,17 @@ def nmbgmr_pressure_waterlevel_datastreams(request):
 
     ss = SimpleSTAO()
     ss.render('sensor', PRESSURE_SENSOR)
+    ss.render('observed_property', DTW_OBS_PROP)
+
+    return stao.render(request)
+
+
+def nmbgmr_acoustic_waterlevel_datastreams(request):
+    from nmbgmr.entities import NMBGMRAcousticWaterLevelsDatastreams
+    stao = NMBGMRAcousticWaterLevelsDatastreams()
+
+    ss = SimpleSTAO()
+    ss.render('sensor', ACOUSTIC_SENSOR)
     ss.render('observed_property', DTW_OBS_PROP)
 
     return stao.render(request)
