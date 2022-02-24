@@ -20,11 +20,11 @@ from sta.definitions import FOOT, OM_Measurement
 try:
     from stao import BQSTAO, LocationGeoconnexMixin
     from util import make_geometry_point_from_utm, asiotid
-    from constants import GWL_DS, DTW_OBS_PROP, MANUAL_SENSOR, PRESSURE_SENSOR
+    from constants import GWL_DS, DTW_OBS_PROP, MANUAL_SENSOR, PRESSURE_SENSOR, WATER_QUANTITY
 except ImportError:
     from stao.stao import BQSTAO, LocationGeoconnexMixin
     from stao.util import make_geometry_point_from_utm, asiotid
-    from stao.constants import GWL_DS, DTW_OBS_PROP, MANUAL_SENSOR, PRESSURE_SENSOR
+    from stao.constants import GWL_DS, DTW_OBS_PROP, MANUAL_SENSOR, PRESSURE_SENSOR, WATER_QUANTITY
 
 
 class NMBGMR_Site_STAO(BQSTAO):
@@ -183,7 +183,10 @@ class NMBGMRPressureWaterLevelsDatastreams(NMBGMRWaterLevelDatastreams):
             obsprop = next(self._client.get_observed_properties(name=DTW_OBS_PROP['name']))
             sensor = next(self._client.get_sensors(name=PRESSURE_SENSOR['name']))
             properties = {'MeasuringAgency': record['MeasuringAgency'],
-                          'DataSource': record['DataSource']}
+                          'DataSource': record['DataSource'],
+                          'agency': 'NMBGMR',
+                          'topic': WATER_QUANTITY}
+
             dtwbgs = {'name': GWL_DS['name'],
                       'description': GWL_DS['description'],
                       'Sensor': asiotid(sensor),
@@ -344,7 +347,7 @@ if __name__ == '__main__':
 
     # c = NMBGMRLocations()
     c = NMBGMRPressureWaterLevelsDatastreams()
-    c._limit = 10
+    c._limit = 500
     for i in range(1):
         if i:
             # state = json.loads(ret)
