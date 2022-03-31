@@ -78,7 +78,8 @@ class BaseSTAO:
                     self._load_record(payload, dry)
                     cnt += 1
             else:
-                print(f'skipping {record}')
+                print(f'        skipping {record}')
+            print('-----------------------------------------------')
 
             state = {'OBJECTID': record['OBJECTID'],
                      'limit': self._limit}

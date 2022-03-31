@@ -13,16 +13,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
+import datetime
 import json
+from itertools import groupby
 
 from sta.definitions import FOOT, OM_Measurement
+from sta.util import statime
 
 try:
-    from stao import BQSTAO, LocationGeoconnexMixin
+    from stao import BQSTAO, LocationGeoconnexMixin, ObservationMixin
     from util import make_geometry_point_from_utm, asiotid
     from constants import GWL_DS, DTW_OBS_PROP, MANUAL_SENSOR, PRESSURE_SENSOR, WATER_QUANTITY, ACOUSTIC_SENSOR
 except ImportError:
-    from stao.stao import BQSTAO, LocationGeoconnexMixin
+    from stao.stao import BQSTAO, LocationGeoconnexMixin, ObservationMixin
     from stao.util import make_geometry_point_from_utm, asiotid
     from stao.constants import GWL_DS, DTW_OBS_PROP, MANUAL_SENSOR, PRESSURE_SENSOR, WATER_QUANTITY, ACOUSTIC_SENSOR
 
@@ -33,7 +36,7 @@ class NMBGMR_Site_STAO(BQSTAO):
                'StatusDescription', 'FormationZone']
 
     _dataset = 'locations'
-    _tablename = 'nmbgmrSiteMetaData'
+    _tablename = 'nmbgmr_sites'
 
     _limit = 100
     _orderby = 'OBJECTID asc'
@@ -70,7 +73,7 @@ class NMBGMRThings(NMBGMR_Site_STAO):
     def _get_screens(self, pointid):
         fields = ['ScreenTop', 'ScreenBottom', 'ScreenDescription']
         fs = ",".join(fields)
-        tablename = 'nmbgmrWellScreens'
+        tablename = 'nmbgmr_well_screens'
 
         sql = f'select {fs} from {self._dataset}.{tablename} ' \
               f'where PointID="{pointid}"'
@@ -234,6 +237,83 @@ class NMBGMRAcousticWaterLevelsDatastreams(NMBGMRWaterLevelDatastreams):
                       }
             return dtwbgs
 
+
+def make_statime(t):
+    st = datetime.datetime.strptime(t, '%Y-%m-%dT%H:%M:%S.000Z')
+    st = st.replace(tzinfo=datetime.timezone.utc)
+    return st
+
+
+class NMBGMRWaterLevelsObservations(BQSTAO, ObservationMixin):
+    _dataset = 'levels'
+    _entity_tag = 'observation'
+
+    _tablename = 'nmbgmr_manual_gwl'
+    _fields = ['OBJECTID', 'PointID',
+               'MeasuringAgency', 'MeasurementMethod', 'DataSource', 'DataSource',
+               'DateTimeMeasured', 'DepthToWaterBGS']
+    _limit = 500
+
+    def _handle_extract(self, records):
+        def key(r):
+            return r['PointID']
+
+        for g, obs in groupby(sorted(records, key=key), key=key):
+            obs = list(obs)
+            OBJECTID = max((o['OBJECTID'] for o in obs))
+
+            yield {'PointID': g, 'observations': obs, 'OBJECTID': OBJECTID}
+
+    def _transform(self, request, record):
+        loc = self._client.get_location(name=record['PointID'])
+        if not loc:
+            print(f'******* no location {record["PointID"]}')
+        else:
+            thing = self._client.get_thing(name='Water Well', location=loc['@iot.id'])
+            if thing:
+                try:
+                    ds = self._client.get_datastream(name=GWL_DS['name'], thing=thing['@iot.id'])
+                except StopIteration:
+                    return
+
+                if ds:
+
+                    # get last observation for this datastream
+                    eobs = self._client.get_observations(ds, limit=1,
+                                                         pages=1,
+                                                         verbose=False,
+                                                         orderby='phenomenonTime desc')
+                    last_obs = None
+                    eobs = list(eobs)
+                    if eobs:
+                        last_obs = make_statime(eobs[0]['phenomenonTime'])
+                    print('last obs', ds, last_obs)
+                    vs = []
+                    components = ['phenomenonTime', 'resultTime', 'result']
+                    for obs in record['observations']:
+                        dt = obs['DateTimeMeasured']
+                        if last_obs and dt > last_obs:
+                            t = statime(dt)
+                            t = f'{t.isoformat()}.000Z'
+                            v = obs['DepthToWaterBGS']
+                            try:
+                                v = float(v)
+                                vs.append((t, t, v))
+                            except ValueError as e:
+                                print(f'skipping. error={e}. v={v}')
+
+                    if vs:
+                        payload = {'Datastream': asiotid(ds),
+                                   'observations': vs,
+                                   'components': components}
+                        print('------------- payload', payload)
+                        # return payload
+
+
+class NMBGMRManualWaterLevelsObservations(NMBGMRWaterLevelsObservations):
+    pass
+
+
 # def make_screens(client, objectid, dataset, site_table_name):
 #     # dataset = Variable.get('bq_locations')
 #     # table_name = Variable.get('nmbgmr_screen_tbl')
@@ -381,9 +461,10 @@ class DummyRequest:
 if __name__ == '__main__':
 
     # c = NMBGMRLocations()
-    c = NMBGMRAcousticWaterLevelsDatastreams()
-    c._limit = 500
-    for i in range(1):
+    # c = NMBGMRAcousticWaterLevelsDatastreams()
+    c = NMBGMRManualWaterLevelsObservations()
+    # c._limit = 5
+    for i in range(2):
         if i:
             # state = json.loads(ret)
             dr = DummyRequest({'where': f"OBJECTID>{state['OBJECTID']}"})

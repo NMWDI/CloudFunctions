@@ -77,6 +77,12 @@ def nmbgmr_acoustic_waterlevel_datastreams(request):
     return stao.render(request)
 
 
+def nmbgmr_manual_waterlevel_observations(request):
+    from nmbgmr.entities import NMBGMRManualWaterLevelsObservations
+    stao = NMBGMRManualWaterLevelsObservations()
+    return stao.render(request)
+
+
 def ose_realtime_locations(request):
     from ose_realtime.entities import OSERealtimeLocations
     stao = OSERealtimeLocations()
