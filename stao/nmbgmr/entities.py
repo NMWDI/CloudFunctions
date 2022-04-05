@@ -292,7 +292,7 @@ class NMBGMRWaterLevelsObservations(BQSTAO, ObservationMixin):
                     components = ['phenomenonTime', 'resultTime', 'result']
                     for obs in record['observations']:
                         dt = obs['DateTimeMeasured']
-                        if last_obs and dt > last_obs:
+                        if not last_obs or (last_obs and dt > last_obs):
                             t = statime(dt)
                             t = f'{t.isoformat()}.000Z'
                             v = obs['DepthToWaterBGS']
@@ -307,7 +307,7 @@ class NMBGMRWaterLevelsObservations(BQSTAO, ObservationMixin):
                                    'observations': vs,
                                    'components': components}
                         print('------------- payload', payload)
-                        # return payload
+                        return payload
 
 
 class NMBGMRManualWaterLevelsObservations(NMBGMRWaterLevelsObservations):
