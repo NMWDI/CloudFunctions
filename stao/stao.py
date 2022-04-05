@@ -138,6 +138,7 @@ class BQSTAO(BaseSTAO):
 
     def _bq_query(self, sql, **kw):
         client = bigquery.Client()
+        print(f'BQ Query {sql}')
         job = client.query(sql, **kw)
         return job.result()
 

@@ -253,6 +253,7 @@ class NMBGMRWaterLevelsObservations(BQSTAO, ObservationMixin):
                'MeasuringAgency', 'MeasurementMethod', 'DataSource', 'DataSource',
                'DateTimeMeasured', 'DepthToWaterBGS']
     _limit = 500
+    _orderby = 'OBJECTID asc'
 
     def _handle_extract(self, records):
         def key(r):
