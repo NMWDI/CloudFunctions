@@ -259,11 +259,13 @@ class NMBGMRWaterLevelsObservations(BQSTAO, ObservationMixin):
         def key(r):
             return r['PointID']
 
+        maxo = 0
         for g, obs in groupby(sorted(records, key=key), key=key):
             obs = list(obs)
             OBJECTID = max((o['OBJECTID'] for o in obs))
 
-            yield {'PointID': g, 'observations': obs, 'OBJECTID': OBJECTID}
+            maxo = max(maxo, OBJECTID)
+            yield {'PointID': g, 'observations': obs, 'OBJECTID': maxo}
 
     def _transform(self, request, record):
         loc = self._client.get_location(name=record['PointID'])
