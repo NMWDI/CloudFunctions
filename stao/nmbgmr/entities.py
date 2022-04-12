@@ -302,7 +302,7 @@ class NMBGMRWaterLevelsObservations(BQSTAO, ObservationMixin):
                             try:
                                 v = float(v)
                                 vs.append((t, t, v))
-                            except ValueError as e:
+                            except (TypeError, ValueError) as e:
                                 print(f'skipping. error={e}. v={v}')
 
                     if vs:
