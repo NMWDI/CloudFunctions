@@ -290,7 +290,7 @@ class NMBGMRWaterLevelsObservations(BQSTAO, ObservationMixin):
                     eobs = list(eobs)
                     if eobs:
                         last_obs = make_statime(eobs[0]['phenomenonTime'])
-                    print('last obs', ds, last_obs)
+                    print(f'last obs datastream={ds} lastobs={last_obs} ')
                     vs = []
                     components = ['phenomenonTime', 'resultTime', 'result']
                     for obs in record['observations']:
@@ -304,7 +304,8 @@ class NMBGMRWaterLevelsObservations(BQSTAO, ObservationMixin):
                             if not dt:
                                 print(f'skipping invalid datetime. {dt}')
                                 continue
-                            t = t.strftime('%Y-%m-%dT%H:%M:%S.000Z')
+
+                            t = dt.strftime('%Y-%m-%dT%H:%M:%S.000Z')
                             v = obs['DepthToWaterBGS']
                             try:
                                 v = float(v)
