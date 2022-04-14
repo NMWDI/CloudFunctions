@@ -296,12 +296,15 @@ class NMBGMRWaterLevelsObservations(BQSTAO, ObservationMixin):
                     for obs in record['observations']:
                         dt = obs['DateTimeMeasured']
                         if not last_obs or (last_obs and dt > last_obs):
-                            t = statime(dt)
-                            if t is None:
+                            # t = statime(dt)
+                            # if t is None:
+                            #     print(f'skipping invalid datetime. {dt}')
+                            #     continue
+                            # t = f'{t.isoformat()}.000Z'
+                            if not dt:
                                 print(f'skipping invalid datetime. {dt}')
                                 continue
-
-                            t = f'{t.isoformat()}.000Z'
+                            t = t.strftime('%Y-%m-%dT%H:%M:%S.000Z')
                             v = obs['DepthToWaterBGS']
                             try:
                                 v = float(v)
