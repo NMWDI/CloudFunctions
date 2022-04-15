@@ -67,6 +67,8 @@ class BaseSTAO:
 
     def _load(self, request, records, dry):
         cnt = 0
+        counter = self.state.get('counter', 0)
+
         for i, record in enumerate(records):
             print(f'transform record {i} {self._transform_message(record)}')
             payloads = self._transform(request, record)
@@ -81,10 +83,11 @@ class BaseSTAO:
                 print(f'        skipping {record}')
             print('-----------------------------------------------')
 
-            state = {'OBJECTID': record['OBJECTID'],
-                     'limit': self._limit}
+            state = {'OBJECTID': record['OBJECTED'],
+                     'limit': self._limit,
+                     }
             self.state = state
-
+        self.state['counter'] = counter+1
         return self.state
 
     def _load_record(self, payload, dry):
