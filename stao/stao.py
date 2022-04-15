@@ -83,7 +83,7 @@ class BaseSTAO:
                 print(f'        skipping {record}')
             print('-----------------------------------------------')
 
-            state = {'OBJECTID': record['OBJECTED'],
+            state = {'OBJECTID': record['OBJECTID'],
                      'limit': self._limit,
                      }
             self.state = state
