@@ -77,9 +77,21 @@ def nmbgmr_acoustic_waterlevel_datastreams(request):
     return stao.render(request)
 
 
+def nmbgmr_pressure_waterlevel_observations(request):
+    from nmbgmr.entities import NMBGMRWaterLevelsObservations
+    stao = NMBGMRWaterLevelsObservations('pressure_gwl')
+    return stao.render(request)
+
+
+def nmbgmr_acoustic_waterlevel_observations(request):
+    from nmbgmr.entities import NMBGMRWaterLevelsObservations
+    stao = NMBGMRWaterLevelsObservations('acoustic_gwl')
+    return stao.render(request)
+
+
 def nmbgmr_manual_waterlevel_observations(request):
-    from nmbgmr.entities import NMBGMRManualWaterLevelsObservations
-    stao = NMBGMRManualWaterLevelsObservations()
+    from nmbgmr.entities import NMBGMRWaterLevelsObservations
+    stao = NMBGMRWaterLevelsObservations('nmbgmr_manual_gwl')
     return stao.render(request)
 
 
@@ -107,7 +119,8 @@ def ose_realtime_datastreams(request):
 
 
 def isc_seven_rivers_datastreams(request):
-    from isc_seven_rivers.entities import ISCSevenRiversSensors, ISCSevenRiversObservedProperties, ISCSevenRiversDatastreams
+    from isc_seven_rivers.entities import ISCSevenRiversSensors, ISCSevenRiversObservedProperties, \
+        ISCSevenRiversDatastreams
     ret = []
     for k in (ISCSevenRiversSensors, ISCSevenRiversObservedProperties, ISCSevenRiversDatastreams):
         stao = k()

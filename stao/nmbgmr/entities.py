@@ -248,12 +248,15 @@ class NMBGMRWaterLevelsObservations(BQSTAO, ObservationMixin):
     _dataset = 'levels'
     _entity_tag = 'observation'
 
-    _tablename = 'nmbgmr_manual_gwl'
     _fields = ['OBJECTID', 'PointID',
                'MeasuringAgency', 'MeasurementMethod', 'DataSource', 'DataSource',
                'DateTimeMeasured', 'DepthToWaterBGS']
     _limit = 500
     _orderby = 'OBJECTID asc'
+
+    def __init__(self, tablename, *args, **kw):
+        super(NMBGMRWaterLevelsObservations, self).__init__(*args, **kw)
+        self._tablename = tablename
 
     def _handle_extract(self, records):
         def key(r):
@@ -321,9 +324,6 @@ class NMBGMRWaterLevelsObservations(BQSTAO, ObservationMixin):
                         print('------------- payload', payload)
                         return payload
 
-
-class NMBGMRManualWaterLevelsObservations(NMBGMRWaterLevelsObservations):
-    pass
 
 
 # def make_screens(client, objectid, dataset, site_table_name):
@@ -474,7 +474,7 @@ if __name__ == '__main__':
 
     # c = NMBGMRLocations()
     # c = NMBGMRAcousticWaterLevelsDatastreams()
-    c = NMBGMRManualWaterLevelsObservations()
+    c = NMBGMRWaterLevelsObservations('pressure_gwl')
     # c._limit = 5
     for i in range(2):
         if i:

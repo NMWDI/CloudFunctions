@@ -37,11 +37,10 @@ AGENCY = 'OSE-Roswell'
 class CKANSTAO(BaseSTAO):
     resource_id = ''
     ckan_url = ''
-
-    def _extract(self, request):
+    def _get_dict_iter(self):
         blob = self._get_blob()
         header = None
-        yielded = []
+
         for line in blob.split('\n'):
             line = line.strip()
             if line:
@@ -50,10 +49,14 @@ class CKANSTAO(BaseSTAO):
                 if not header:
                     header = [h.lower() for h in line]
                     continue
-                record = dict(zip(header, line))
-                record = self._extract_hook(yielded, record)
-                if record:
-                    yield record
+                yield dict(zip(header, line))
+
+    def _extract(self, request):
+        yielded = []
+        for record in self._get_dict_iter():
+            record = self._extract_hook(yielded, record)
+            if record:
+                yield record
 
     def _extract_hook(self, yielded, record):
         return record
@@ -72,6 +75,8 @@ class OSERoswellSTAO(CKANSTAO):
             yielded.append(record['site_id'])
             return record
 
+
+# {'_id': '983', 'site_id': '334424 104193601', 'date': '2020-01-22T00:00:00', 'time': '1899-12-30T00:00:00', 'location': '7S.26E.6.242343', 'dd_lat': '33.739556', 'dd_lon': '-104.329750', 'dms_lat': '33 44 22.4', 'dms_lon': '104 19 47.1', 'dtwgs': '23.600000', 'basin': 'Roswell', 'comment': '""', 'utm_east': '562085', 'utm_north': '3733480'}
 
 class OSERoswellLocations(OSERoswellSTAO):
     _entity_tag = 'location'
@@ -94,75 +99,37 @@ class OSERoswellLocations(OSERoswellSTAO):
         return payload
 
 
-class Roswell(OSERoswellLocations):
-    resource_id = '5f64d411-c281-491e-ae12-03280c248112'
-
-
-class FTSumner(OSERoswellLocations):
-    resource_id = '3fa1cd2c-be33-4bba-a65b-bbc786dcbd39'
-
-
-class Hondo(OSERoswellLocations):
-    resource_id = 'ce18fbb9-296d-4b40-ba66-f81a061051ac'
-
-
 class OSERoswellThings(OSERoswellSTAO):
     _entity_tag = 'thing'
 
     def _transform(self, request, record):
         properties = {'agency': AGENCY}
-        # copy_properties(properties, record, ('measured_depth_of_well',
-        #                                      'lnapl_cas_rn',
-        #                                      'lnapl_depth',
-        #                                      'lnapl_thickness',
-        #                                      'lnapl_density',
-        #                                      'dnapl_cas_rn',
-        #                                      'dnapl_depth',
-        #                                      'dnapl_thickness',
-        #                                      ))
-        #
-        name = record['sys_loc_code']
+        name = record['site_id']
         location = self._client.get_location(f"name eq '{name}'")
         payload = {'name': WATER_WELL,
                    'description': NO_DESCRIPTION,
                    'properties': properties,
                    'Locations': [asiotid(location)],
                    }
-        # return payload
+        return payload
 
-
-# use SimpleSTAO instead
-# class CABQSensors(CABQSTAO):
-#     _entity_tag = 'sensor'
-#
-#     def _transform(self, request, record):
-#         return MANUAL_SENSOR
-#
-#
-# class CABQObservedProperties(CABQSTAO):
-#     _entity_tag = 'observed_property'
-#
-#     def _transform(self, request, record):
-#         return [DTW_OBS_PROP, ELEV_OBS_PROP]
 
 
 class OSERoswellDatastreams(OSERoswellSTAO):
     _entity_tag = 'datastream'
 
     def _transform(self, request, record):
-        loc = self._client.get_location(f"name eq '{record['sys_loc_code']}' and properties/agency eq '{AGENCY}'")
+        loc = self._client.get_location(f"name eq '{record['site_id']}' and properties/agency eq '{AGENCY}'")
         if loc:
             lid = loc['@iot.id']
 
             thing = self._client.get_thing(name=WATER_WELL, location=lid)
             if thing:
                 obsprop = next(self._client.get_observed_properties(name=DTW_OBS_PROP['name']))
-                welev_obsprop = next(self._client.get_observed_properties(name=ELEV_OBS_PROP['name']))
                 sensor = next(self._client.get_sensors(name=MANUAL_SENSOR['name']))
 
                 thing_id = asiotid(thing)
                 obsprop_id = asiotid(obsprop)
-                welev_obsprop_id = asiotid(welev_obsprop)
                 sensor_id = asiotid(sensor)
                 properties = {'agency': AGENCY,
                               'topic': WATER_QUANTITY}
@@ -175,43 +142,32 @@ class OSERoswellDatastreams(OSERoswellSTAO):
                        'observationType': OM_Measurement,
                        'properties': properties
                        }
-                welev = {'name': GWE_DS['name'],
-                         'description': GWE_DS['description'],
-                         'Thing': thing_id,
-                         'ObservedProperty': welev_obsprop_id,
-                         'Sensor': sensor_id,
-                         'unitOfMeasurement': FOOT,
-                         'observationType': OM_Measurement,
-                         'properties': properties
-                         }
-                payloads = [dtw, welev]
-                return payloads
+                return dtw
 
 
 class OSERoswellObservations(OSERoswellSTAO, ObservationMixin):
-    _attr = None
-    _name = None
-
-    def _extract_hook(self, reader):
+    def _extract(self, request):
         def key(r):
-            return r['sys_loc_code']
+            return r['site_id']
 
-        for g, obs in groupby(sorted(reader, key=key), key=key):
-            yield {'sys_loc_code': g, 'observations': obs}
+        ds = list(self._get_dict_iter())
+        for site_id, gs in groupby(sorted(ds, key=key), key=key):
+            yield {'site_id': site_id, 'observations': gs}
 
     def _transform(self, request, record):
-        loc = self._client.get_location(name=record['sys_loc_code'])
+        loc = self._client.get_location(name=record['site_id'])
         if loc:
-            thing = self._client.get_thing(name='Water Well', location=loc['@iot.id'])
+            thing = self._client.get_thing(name=WATER_WELL, location=loc['@iot.id'])
             if thing:
-                ds = self._client.get_datastream(name=self._name, thing=thing['@iot.id'])
+                ds = self._client.get_datastream(name=GWL_DS['name'], thing=thing['@iot.id'])
 
                 vs = []
                 components = ['phenomenonTime', 'resultTime', 'result']
                 for obs in record['observations']:
-                    t = statime(obs['measurement_date'])
-
-                    v = obs[self._attr]
+                    da = obs['date'].split('T')[0]
+                    ti = obs['time'].split('T')[1]
+                    t = f'{da}T{ti}.000Z'
+                    v = obs['dtwgs']
                     try:
                         v = float(v)
                         vs.append((t, t, v))
@@ -226,25 +182,39 @@ class OSERoswellObservations(OSERoswellSTAO, ObservationMixin):
                     return dtw
 
 
-class OSERoswellWaterElevations(OSERoswellObservations):
-    _attr = 'water_level'
-    _name = GWE_DS['name']
-
-
-class OSERoswellWaterDepths(OSERoswellObservations):
-    _attr = 'water_depth'
-    _name = GWL_DS['name']
+# class OSERoswellWaterElevations(OSERoswellObservations):
+#     _attr = 'water_level'
+#     _name = GWE_DS['name']
+#
+#
+# class OSERoswellWaterDepths(OSERoswellObservations):
+#     _attr = 'water_depth'
+#     _name = GWL_DS['name']
 
 
 if __name__ == '__main__':
-    c = Roswell()
-    c.render(None, dry=False)
 
-    c = FTSumner()
-    c.render(None, dry=False)
+    # c = Roswell()
+    # c.render(None, dry=False)
+    #
+    # c = FTSumner()
+    # c.render(None, dry=False)
+    #
+    # c = Hondo()
+    # c.render(None, dry=False)
+    resources = (('Roswell', '5f64d411-c281-491e-ae12-03280c248112'),
+                 ('FTSumner', '3fa1cd2c-be33-4bba-a65b-bbc786dcbd39'),
+                 ('Hondo', 'ce18fbb9-296d-4b40-ba66-f81a061051ac'))
 
-    c = Hondo()
-    c.render(None, dry=False)
+    dry = False
+    # dry = True
+    for name, rid in resources:
+        # c = OSERoswellLocations()
+        # c = OSERoswellThings()
+        # c = OSERoswellDatastreams()
+        c = OSERoswellObservations()
+        c.resource_id = rid
+        c.render(None, dry=dry)
 
     # c = CABQLocations()
     # c = CABQThings()
