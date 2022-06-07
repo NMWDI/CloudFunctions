@@ -13,6 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
+"""
+constants.py  A list of global static variables
+
+"""
+
 
 NO_DESCRIPTION = 'No Description'
 NO_DEFINITION = 'No Definition'

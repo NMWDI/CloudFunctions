@@ -14,6 +14,10 @@
 # limitations under the License.
 # ===============================================================================
 
+"""
+main.py.  This module holds all the cloud function entry points.
+"""
+
 try:
     from constants import NO_DESCRIPTION, MANUAL_SENSOR, DTW_OBS_PROP, PRESSURE_SENSOR, ACOUSTIC_SENSOR
     from stao import SimpleSTAO

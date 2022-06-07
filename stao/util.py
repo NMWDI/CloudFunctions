@@ -13,6 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
+"""
+util.py This module holds utility functions.
+
+"""
+
+
+
 import json
 import logging
 import random
@@ -223,35 +230,35 @@ def make_fuzzy_geometry_from_latlon(lat, lon):
 #     previous_max = ti.xcom_pull(task_ids=task_id, key='return_value', include_prior_dates=True)
 #     logging.info(f'prev max {previous_max}')
 #     return previous_max
-
-LOCATION_DESCRIPTION = 'Location of well where measurements are made'
-GWL_DATASTREAM = 'Groundwater Levels'
-PRESSURE_GWL_DATASTREAM = 'Groundwater Levels(Pressure)'
-ACOUSTIC_GWL_DATASTREAM = 'Groundwater Levels(Acoustic)'
-GWL_DESCRIPTION = 'Measurement of groundwater depth in a water well, as measured below ground surface'
-CONTINUOUS_GWL_DESCRIPTION = 'Measurement of groundwater depth in a water well, as measured below ground surface. ' \
-                             'For continuous Datastreams with more than one measurement per day the MINIMUM depth to ' \
-                             'water is reported '
-RAW_GWL_DATASTREAM = 'Raw Groundwater Depth'
-RAW_GWL_DESCRIPTION = 'Uncorrected measurement of groundwater depth in a water well, as measured from a reference ' \
-                      'measuring point'
-WH_GWL_DATASTREAM = 'Groundwater Head'
-WH_GWL_DESCRIPTION = 'Measurement of water above the transducer. Not Quality Controlled'
-
-AWH_GWL_DATASTREAM = 'Adjusted Groundwater Head'
-AWH_GWL_DESCRIPTION = 'Measurement of water above the transducer. Quality Controlled'
-
-WATER_WELL = 'Water Well'
-BGS_OBSERVED_PROPERTY = ('Depth to Water Below Ground Surface', 'depth to water below ground surface')
-WH_OBSERVED_PROPERTY = ('Groundwater Head', 'Water pressure measured by transducer')
-AWH_OBSERVED_PROPERTY = ('Adjusted Groundwater Head', 'Water pressure measured by transducer corrected by manual '
-                                                      'measurements')
-RAW_OBSERVED_PROPERTY = ('Raw Depth to Water', 'uncorrected measurement of depth to water from measuring point')
-MANUAL_SENSOR_DESCRIPTION = 'Manual measurement of groundwater depth by steel tape, electronic probe or other'
-PRESSURE_SENSOR_DESCRIPTION = '''Continuous (periodic automated) measurement depth to water in Feet below ground 
-surface (converted from pressure reading from depth below ground surface in feet). Not Provisional. Quality 
-Controlled'''
-ACOUSTIC_SENSOR_DESCRIPTION = '''Continuous (periodic automated) measurement depth to water in Feet below ground 
-surface (converted from acoustic device). Not Provisional. Quality Controlled '''
+#
+# LOCATION_DESCRIPTION = 'Location of well where measurements are made'
+# GWL_DATASTREAM = 'Groundwater Levels'
+# PRESSURE_GWL_DATASTREAM = 'Groundwater Levels(Pressure)'
+# ACOUSTIC_GWL_DATASTREAM = 'Groundwater Levels(Acoustic)'
+# GWL_DESCRIPTION = 'Measurement of groundwater depth in a water well, as measured below ground surface'
+# CONTINUOUS_GWL_DESCRIPTION = 'Measurement of groundwater depth in a water well, as measured below ground surface. ' \
+#                              'For continuous Datastreams with more than one measurement per day the MINIMUM depth to ' \
+#                              'water is reported '
+# RAW_GWL_DATASTREAM = 'Raw Groundwater Depth'
+# RAW_GWL_DESCRIPTION = 'Uncorrected measurement of groundwater depth in a water well, as measured from a reference ' \
+#                       'measuring point'
+# WH_GWL_DATASTREAM = 'Groundwater Head'
+# WH_GWL_DESCRIPTION = 'Measurement of water above the transducer. Not Quality Controlled'
+#
+# AWH_GWL_DATASTREAM = 'Adjusted Groundwater Head'
+# AWH_GWL_DESCRIPTION = 'Measurement of water above the transducer. Quality Controlled'
+#
+# WATER_WELL = 'Water Well'
+# BGS_OBSERVED_PROPERTY = ('Depth to Water Below Ground Surface', 'depth to water below ground surface')
+# WH_OBSERVED_PROPERTY = ('Groundwater Head', 'Water pressure measured by transducer')
+# AWH_OBSERVED_PROPERTY = ('Adjusted Groundwater Head', 'Water pressure measured by transducer corrected by manual '
+#                                                       'measurements')
+# RAW_OBSERVED_PROPERTY = ('Raw Depth to Water', 'uncorrected measurement of depth to water from measuring point')
+# MANUAL_SENSOR_DESCRIPTION = 'Manual measurement of groundwater depth by steel tape, electronic probe or other'
+# PRESSURE_SENSOR_DESCRIPTION = '''Continuous (periodic automated) measurement depth to water in Feet below ground
+# surface (converted from pressure reading from depth below ground surface in feet). Not Provisional. Quality
+# Controlled'''
+# ACOUSTIC_SENSOR_DESCRIPTION = '''Continuous (periodic automated) measurement depth to water in Feet below ground
+# surface (converted from acoustic device). Not Provisional. Quality Controlled '''
 # MANUAL_SENSOR = ('Manual', 'Manual measurement of groundwater depth by steel tape, electronic probe or other')
 # ============= EOF =============================================

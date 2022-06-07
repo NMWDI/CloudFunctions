@@ -24,11 +24,40 @@ except ImportError:
 
 
 class ObservationMixin:
+    """
+    """
     def _get_load_function_name(self):
         return 'add_observations'
 
 
-class SimpleSTAO:
+class STAO:
+    """
+    Base class for all SensorThings Access Objects
+    here to enforce that subclasses implement a render method
+    """
+    def render(self, *args, **kw):
+        raise NotImplementedError
+
+
+class SimpleSTAO(STAO):
+    """
+    Simple SensorThings Access Object
+
+    use this to add explicit payloads to ST. It is a simple wrapper around a pysta.Client object.
+
+    example usage:
+    ss = SimpleSTAO()
+    ss.render('sensor', MANUAL_SENSOR)  # where MANUAL_SENSOR is dict representing a JSON payload
+    ss.render('observed_property', DTW_OBS_PROP) # where DTW_OBS_PROP is dict representing a JSON payload
+
+
+    MANUAL_SENSOR = {'name': 'Manual',
+                 'description': NO_DESCRIPTION,
+                 'encodingType': ENCODING_PDF,
+                 'metadata': NO_METADATA
+                 }
+    """
+
     def render(self, tag, payload):
         client = make_sta_client()
 
@@ -36,10 +65,21 @@ class SimpleSTAO:
         func(payload)
 
 
-class BaseSTAO:
+class BaseSTAO(STAO):
+
+    """
+    Base class for all more advanced STAOs.
+
+    all subclasses must implement an _extract(self, request) method
+
+    optionally the subclass may implement a _transform(self, request, record) method
+
+    """
     _limit = None
 
     def __init__(self):
+        """
+        """
         self._client = make_sta_client()
         self.state = {}
 
@@ -60,12 +100,27 @@ class BaseSTAO:
         raise NotImplementedError
 
     def _transform(self, request, record):
+        """
+        return a transformed record
+        :param request:
+        :param record:
+        :return:
+        """
+
         return record
 
     def _transform_message(self, record):
         return record
 
     def _load(self, request, records, dry):
+        """
+        Load a list of records to an ST instance
+
+        :param request:
+        :param records:
+        :param dry:
+        :return:
+        """
         cnt = 0
         counter = self.state.get('counter', 0)
 
@@ -110,9 +165,21 @@ class BaseSTAO:
 
 
 class BQSTAO(BaseSTAO):
+    """
+    BiqQuery STAO.
+
+    use to extract data from a BiqQuery (BQ) dataset.
+
+    subclasses must define
+    _fields: list    Explicit list of column names
+    _dataset: str    The name of the BQ dataset
+    _tablename: str  The name of the BQ table
+    """
+
     _fields = None
     _dataset = None
     _tablename = None
+
     _orderby = None
 
     def _extract(self, request):
@@ -174,6 +241,11 @@ class LocationGeoconnexMixin:
 
 
 class BucketSTAO(BaseSTAO):
+    """
+    A STAO for ETLing data from a Google Cloud Storage bucket.
+
+    This is typically only used as a one-shot STAO.  upload large files to the GCS bucket, use a BucketSTAO to ETL to ST
+    """
     _bucket = 'waterdatainitiative'
     _blob = None
 
