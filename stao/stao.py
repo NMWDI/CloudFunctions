@@ -25,6 +25,7 @@ except ImportError:
 
 class ObservationMixin:
     """
+    Observation mixin class.
     """
     def _get_load_function_name(self):
         return 'add_observations'
@@ -59,6 +60,13 @@ class SimpleSTAO(STAO):
     """
 
     def render(self, tag, payload):
+        """
+        use this method to explicitly upload an entity
+
+        :param tag: str.  name of the ST entity e.g "sensor"
+        :param payload: dict.  JSON-style payload for the entity
+        :return: None
+        """
         client = make_sta_client()
 
         func = getattr(client, f'put_{tag}')
@@ -71,11 +79,13 @@ class BaseSTAO(STAO):
     Base class for all more advanced STAOs.
 
     all subclasses must implement an _extract(self, request) method
+    all subclasses must define _entity_tag.  e.g _entity_tag = "location"
 
     optionally the subclass may implement a _transform(self, request, record) method
 
     """
     _limit = None
+    _entity_tag = None
 
     def __init__(self):
         """
@@ -84,6 +94,14 @@ class BaseSTAO(STAO):
         self.state = {}
 
     def render(self, request, dry=False):
+        """
+
+        :param request: Request object passed in by the CloudFunction trigger
+        :param dry: optional keyword for testing.  dry=False goes through the motions but does not send POSTs to the
+        ST server
+        :return: dict.  return the STAOs state
+        """
+
         if request:
             if request.json:
                 self.state = request.json
@@ -102,23 +120,33 @@ class BaseSTAO(STAO):
     def _transform(self, request, record):
         """
         return a transformed record
-        :param request:
-        :param record:
+        :param request:  Request object passed in by the CloudFunction trigger
+        :param record:  dict representing an individual "record"
         :return:
         """
 
         return record
 
     def _transform_message(self, record):
+        """
+        Override this method to modify how the record is printed to std out.
+
+        by default the record is returned unmodified
+
+        this function can return any "printable" object
+        :param record:
+        :return: record
+        """
         return record
 
     def _load(self, request, records, dry):
         """
         Load a list of records to an ST instance
 
-        :param request:
-        :param records:
-        :param dry:
+        :param request: Request object passed in by the CloudFunction trigger
+        :param records: list of records
+        :param dry: flag for testing. if true goes through the motions but does not send POSTs to the
+        ST server
         :return:
         """
         cnt = 0
@@ -146,6 +174,13 @@ class BaseSTAO(STAO):
         return self.state
 
     def _load_record(self, payload, dry):
+        """
+        Uses the pysta.Client to POST a payload
+        :param payload:
+        :param dry:
+        :return: returns the pysta object representing the ST entity added to the server
+        """
+
         clt = self._client
 
         if hasattr(self, '_get_load_function_name'):
@@ -231,6 +266,13 @@ class BQSTAO(BaseSTAO):
 
 
 class LocationGeoconnexMixin:
+    """
+    Location Geoconnex mixin. used to add a "geoconnex" keyword to the Location's properties.
+
+    Because the geoconnex uri is constructed using the Location's @iot.id the entity must be added first to the
+    server. The entity's properties are then "patched"
+    """
+
     def _load_record(self, payload, *args, **kw):
         obj = super(LocationGeoconnexMixin, self)._load_record(payload, *args, **kw)
         iotid = obj.iotid
@@ -245,16 +287,28 @@ class BucketSTAO(BaseSTAO):
     A STAO for ETLing data from a Google Cloud Storage bucket.
 
     This is typically only used as a one-shot STAO.  upload large files to the GCS bucket, use a BucketSTAO to ETL to ST
+
+    subclasses must define _blob.  e.g ose_rt_locations.geojson
     """
     _bucket = 'waterdatainitiative'
     _blob = None
 
     def _get_bucket(self):
+        """
+        helper function to grab a bucket from GCS
+        :return:
+        """
         client = storage.Client()
         bucket = client.get_bucket(self._bucket)
         return bucket
 
     def _extract(self, request):
+        """
+
+        :param request: Request object passed in by the CloudFunction trigger
+        :return: JSON object
+        """
+
         print(f'extracting bucket {self._bucket}')
         bucket = self._get_bucket()
         blob = bucket.get_blob(self._blob)
@@ -262,5 +316,10 @@ class BucketSTAO(BaseSTAO):
         return self._handle_extract(jobj)
 
     def _handle_extract(self, jobj):
+        """
+        :param jobj:
+        :return: JSON object
+        """
+
         return jobj
 # ============= EOF =============================================
