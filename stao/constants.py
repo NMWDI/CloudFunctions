@@ -18,7 +18,11 @@ constants.py  A list of global static variables
 
 """
 
+WELL_LOCATION_DESCRIPTION = 'Location of well where measurements are made'
 
+WATER_WELL = {'name': 'Water Well',
+              'description': 'Well drilled or set into subsurface for the purposes '
+                             'of pumping water or monitoring groundwater'}
 NO_DESCRIPTION = 'No Description'
 NO_DEFINITION = 'No Definition'
 NO_METADATA = 'No Metadata'

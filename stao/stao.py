@@ -86,6 +86,7 @@ class BaseSTAO(STAO):
     """
     _limit = None
     _entity_tag = None
+    _cursor_id = 'OBJECTID'
 
     def __init__(self):
         """
@@ -166,7 +167,7 @@ class BaseSTAO(STAO):
                 print(f'        skipping {record}')
             print('-----------------------------------------------')
 
-            state = {'OBJECTID': record.get('OBJECTID'),
+            state = {self._cursor_id: record.get(self._cursor_id),
                      'limit': self._limit,
                      }
             self.state = state
@@ -215,6 +216,7 @@ class BQSTAO(BaseSTAO):
     _dataset = None
     _tablename = None
 
+    _where = None
     _orderby = None
 
     def _extract(self, request):
@@ -225,10 +227,13 @@ class BQSTAO(BaseSTAO):
             print('error a {}'.format(e))
             where = None
 
+        if self._where:
+            where = self._where
+
         if not where:
             try:
-                obj = int(request.json.get('OBJECTID'))
-                where = f"OBJECTID>{obj}"
+                obj = int(request.json.get(self._cursor_id))
+                where = f"{self._cursor_id}>{obj}"
             except (ValueError, AttributeError, TypeError) as e:
                 print('error b {}'.format(e))
                 where = None

@@ -23,11 +23,13 @@ from sta.util import statime
 try:
     from stao import BQSTAO, LocationGeoconnexMixin, ObservationMixin
     from util import make_geometry_point_from_utm, asiotid
-    from constants import GWL_DS, DTW_OBS_PROP, MANUAL_SENSOR, PRESSURE_SENSOR, WATER_QUANTITY, ACOUSTIC_SENSOR
+    from constants import GWL_DS, DTW_OBS_PROP, MANUAL_SENSOR, PRESSURE_SENSOR, WATER_QUANTITY, ACOUSTIC_SENSOR, \
+        WELL_LOCATION_DESCRIPTION, WATER_WELL
 except ImportError:
     from stao.stao import BQSTAO, LocationGeoconnexMixin, ObservationMixin
     from stao.util import make_geometry_point_from_utm, asiotid
-    from stao.constants import GWL_DS, DTW_OBS_PROP, MANUAL_SENSOR, PRESSURE_SENSOR, WATER_QUANTITY, ACOUSTIC_SENSOR
+    from stao.constants import GWL_DS, DTW_OBS_PROP, MANUAL_SENSOR, PRESSURE_SENSOR, WATER_QUANTITY, ACOUSTIC_SENSOR, \
+    WELL_LOCATION_DESCRIPTION, WATER_WELL
 
 
 class NMBGMR_Site_STAO(BQSTAO):
@@ -58,7 +60,7 @@ class NMBGMRLocations(LocationGeoconnexMixin, NMBGMR_Site_STAO):
         z = 13
 
         payload = {'name': record['PointID'].upper(),
-                   'description': 'Location of well where measurements are made',
+                   'description': WELL_LOCATION_DESCRIPTION,
                    'properties': properties,
                    'location': make_geometry_point_from_utm(e, n, z),
                    "encodingType": "application/vnd.geo+json",
@@ -86,10 +88,9 @@ class NMBGMRThings(NMBGMR_Site_STAO):
         name = record['PointID']
         location = self._client.get_location(f"name eq '{name}'")
         screens = self._get_screens(name)
-        payload = {'name': 'Water Well',
+        payload = {'name': WATER_WELL['name'],
                    'Locations': [{'@iot.id': location['@iot.id']}],
-                   'description': 'Well drilled or set into subsurface for the purposes '
-                                  'of pumping water or monitoring groundwater',
+                   'description': WATER_WELL['description'],
                    'properties': {'WellDepth': record['WellDepth'],
                                   'GeologicFormation': record['FormationZone'],
                                   'Use': record['CurrentUseDescription'],
