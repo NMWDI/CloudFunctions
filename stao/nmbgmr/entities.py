@@ -22,12 +22,12 @@ from sta.util import statime
 
 try:
     from stao import BQSTAO, LocationGeoconnexMixin, ObservationMixin
-    from util import make_geometry_point_from_utm, asiotid
+    from util import make_geometry_point_from_utm, asiotid, make_statime
     from constants import GWL_DS, DTW_OBS_PROP, MANUAL_SENSOR, PRESSURE_SENSOR, WATER_QUANTITY, ACOUSTIC_SENSOR, \
         WELL_LOCATION_DESCRIPTION, WATER_WELL
 except ImportError:
     from stao.stao import BQSTAO, LocationGeoconnexMixin, ObservationMixin
-    from stao.util import make_geometry_point_from_utm, asiotid
+    from stao.util import make_geometry_point_from_utm, asiotid, make_statime
     from stao.constants import GWL_DS, DTW_OBS_PROP, MANUAL_SENSOR, PRESSURE_SENSOR, WATER_QUANTITY, ACOUSTIC_SENSOR, \
     WELL_LOCATION_DESCRIPTION, WATER_WELL
 
@@ -237,12 +237,6 @@ class NMBGMRAcousticWaterLevelsDatastreams(NMBGMRWaterLevelDatastreams):
                       'properties': properties
                       }
             return dtwbgs
-
-
-def make_statime(t):
-    st = datetime.datetime.strptime(t, '%Y-%m-%dT%H:%M:%S.000Z')
-    st = st.replace(tzinfo=datetime.timezone.utc)
-    return st
 
 
 class NMBGMRWaterLevelsObservations(BQSTAO, ObservationMixin):

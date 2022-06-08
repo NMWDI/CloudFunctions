@@ -23,6 +23,7 @@ util.py This module holds utility functions.
 import json
 import logging
 import random
+from datetime import datetime
 
 import geojson as geojson
 import pyproj
@@ -151,6 +152,11 @@ def make_total_records(client, dataset, table_name, objectid=None):
 #     from sta.sta_client import STAMQTTClient
 #     staclient = STAMQTTClient(connection.host)
 #     return staclient
+
+def make_statime(t):
+    st = datetime.datetime.strptime(t, '%Y-%m-%dT%H:%M:%S.000Z')
+    st = st.replace(tzinfo=datetime.timezone.utc)
+    return st
 
 
 def make_sta_client(dry=False, project_id=None, secret_id=None):

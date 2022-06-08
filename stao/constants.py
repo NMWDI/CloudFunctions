@@ -23,6 +23,8 @@ WELL_LOCATION_DESCRIPTION = 'Location of well where measurements are made'
 WATER_WELL = {'name': 'Water Well',
               'description': 'Well drilled or set into subsurface for the purposes '
                              'of pumping water or monitoring groundwater'}
+
+
 NO_DESCRIPTION = 'No Description'
 NO_DEFINITION = 'No Definition'
 NO_METADATA = 'No Metadata'
@@ -38,7 +40,6 @@ ELEV_OBS_PROP = {'name': 'Groundwater Elevation',
 ENCODING_GEOJSON = "application/vnd.geo+json"
 ENCODING_PDF = "application/pdf"
 
-WATER_WELL = 'Water Well'
 WATER_QUANTITY = 'Water Quantity'
 
 MANUAL_SENSOR = {'name': 'Manual',
@@ -61,6 +62,11 @@ surface (converted from acoustic device). Not Provisional. Quality Controlled'''
                    'encodingType': ENCODING_PDF,
                    'metadata': NO_METADATA
                    }
+
+HYDROVU_SENSOR = {'name': 'VuLink',
+                  'description': NO_DESCRIPTION,
+                  'encodingType': ENCODING_PDF,
+                  'metadata': NO_METADATA}
 
 GWL_DS = {'name': 'Groundwater Levels',
           'description': 'Measurement of groundwater depth in a water well, as measured below ground surface'}

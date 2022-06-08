@@ -19,13 +19,39 @@ main.py.  This module holds all the cloud function entry points.
 """
 
 try:
-    from constants import NO_DESCRIPTION, MANUAL_SENSOR, DTW_OBS_PROP, PRESSURE_SENSOR, ACOUSTIC_SENSOR
+    from constants import NO_DESCRIPTION, MANUAL_SENSOR, DTW_OBS_PROP, PRESSURE_SENSOR, ACOUSTIC_SENSOR, HYDROVU_SENSOR
     from stao import SimpleSTAO
 except ImportError:
-    from stao.constants import NO_DESCRIPTION, MANUAL_SENSOR, DTW_OBS_PROP, PRESSURE_SENSOR, ACOUSTIC_SENSOR
+    from stao.constants import NO_DESCRIPTION, MANUAL_SENSOR, DTW_OBS_PROP, PRESSURE_SENSOR, ACOUSTIC_SENSOR, HYDROVU_SENSOR
     from stao.stao import SimpleSTAO
 
+# ======================== pvacd hydrovu ===========================
+def pecos_hydrovu_locations(request):
+    from pecos_hydrovu.entities import PHVLocations
+    stao = PHVLocations()
+    return stao.render(request)
 
+
+def pecos_hydrovu_things(request):
+    from pecos_hydrovu.entities import PHVThings
+    stao = PHVThings()
+    return stao.render(request)
+
+
+def pecos_hydrovu_waterlevel_datastreams(request):
+    from pecos_hydrovu.entities import PHVWaterLevelsDatastreams
+    stao = PHVWaterLevelsDatastreams()
+
+    ss = SimpleSTAO()
+    ss.render('sensor', HYDROVU_SENSOR)
+
+    return stao.render(request)
+
+
+# =================================================
+
+
+# ======================== isc seven rivers ===========================
 def isc_seven_rivers_locations(request):
     from isc_seven_rivers.entities import etl_locations
     return etl_locations(request)
@@ -36,6 +62,18 @@ def isc_seven_rivers_things(request):
     return etl_things(request)
 
 
+def isc_seven_rivers_datastreams(request):
+    from isc_seven_rivers.entities import ISCSevenRiversSensors, ISCSevenRiversObservedProperties, \
+        ISCSevenRiversDatastreams
+    ret = []
+    for k in (ISCSevenRiversSensors, ISCSevenRiversObservedProperties, ISCSevenRiversDatastreams):
+        stao = k()
+        ret.append(stao.render(request))
+
+    return ','.join(ret)
+
+
+# =============== NMBGMR =====================
 def nmbgmr_locations(request):
     from nmbgmr.entities import NMBGMRLocations
     stao = NMBGMRLocations()
@@ -97,8 +135,10 @@ def nmbgmr_manual_waterlevel_observations(request):
     from nmbgmr.entities import NMBGMRWaterLevelsObservations
     stao = NMBGMRWaterLevelsObservations('nmbgmr_manual_gwl')
     return stao.render(request)
+# =================================================
 
 
+# =============== OSE RealTime =====================
 def ose_realtime_locations(request):
     from ose_realtime.entities import OSERealtimeLocations
     stao = OSERealtimeLocations()
@@ -120,19 +160,9 @@ def ose_realtime_datastreams(request):
         ret.append(stao.render(request))
 
     return ','.join(ret)
+# =================================================
 
-
-def isc_seven_rivers_datastreams(request):
-    from isc_seven_rivers.entities import ISCSevenRiversSensors, ISCSevenRiversObservedProperties, \
-        ISCSevenRiversDatastreams
-    ret = []
-    for k in (ISCSevenRiversSensors, ISCSevenRiversObservedProperties, ISCSevenRiversDatastreams):
-        stao = k()
-        ret.append(stao.render(request))
-
-    return ','.join(ret)
-
-
+# =============== CABQ =====================
 def cabq_waterelevations(request):
     from cabq.entities import CABQWaterElevations
     stao = CABQWaterElevations()

@@ -102,7 +102,7 @@ class CABQThings(CABQSTAO):
 
         name = record['sys_loc_code']
         location = self._client.get_location(f"name eq '{name}'")
-        payload = {'name': WATER_WELL,
+        payload = {'name': WATER_WELL['name'],
                    'description': NO_DESCRIPTION,
                    'properties': properties,
                    'Locations': [asiotid(location)],
