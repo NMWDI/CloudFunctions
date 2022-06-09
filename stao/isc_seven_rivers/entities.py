@@ -17,6 +17,7 @@ import datetime
 from itertools import groupby
 
 from sta.definitions import FOOT, OM_Measurement
+import pytz
 
 try:
     from stao import BQSTAO, LocationGeoconnexMixin, ObservationMixin
@@ -29,6 +30,7 @@ except ImportError:
 
 AGENCY = 'ISC_SEVEN_RIVERS'
 
+utc=pytz.UTC
 
 class ISCSevenRiversMonitoringPoints(BQSTAO):
     _fields = ['id', 'name', 'type', 'comments', 'latitude', 'longitude', 'groundSurfaceElevationFeet']
@@ -193,7 +195,9 @@ class ISCSevenRiversWaterLevels(BQSTAO, ObservationMixin):
                             continue
 
                         dt = datetime.datetime.utcfromtimestamp(dt/1000)
-
+                        dt = dt.replace(tzinfo=utc)
+                        if last_obs:
+                            last_obs = last_obs.replace(tzinfo=utc)
                         if not last_obs or (last_obs and dt > last_obs):
                             t = dt.strftime('%Y-%m-%dT%H:%M:%S.000Z')
                             v = obs[self._value_field]

@@ -7,5 +7,6 @@ pyproj
 shapely
 geojson
 numpy
+pytz
 
 
