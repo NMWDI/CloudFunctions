@@ -20,7 +20,7 @@ from sta.definitions import FOOT, OM_Measurement
 
 try:
     from stao import BQSTAO, LocationGeoconnexMixin, ObservationMixin
-    from util import make_geometry_point_from_latlon, asiotid
+    from util import make_geometry_point_from_latlon, asiotid, make_statime
     from constants import DTW_OBS_PROP, WATER_WELL, GWL_DS
 except ImportError:
     from stao.stao import BQSTAO, LocationGeoconnexMixin, ObservationMixin
