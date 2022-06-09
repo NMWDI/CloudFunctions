@@ -192,8 +192,9 @@ class ISCSevenRiversWaterLevels(BQSTAO, ObservationMixin):
                             print(f'skipping invalid datetime. {dt}')
                             continue
 
+                        dt = datetime.datetime.utcfromtimestamp(dt/1000)
+
                         if not last_obs or (last_obs and dt > last_obs):
-                            dt = datetime.datetime.utcfromtimestamp(dt/1000)
                             t = dt.strftime('%Y-%m-%dT%H:%M:%S.000Z')
                             v = obs[self._value_field]
                             try:
