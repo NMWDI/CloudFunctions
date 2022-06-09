@@ -141,6 +141,7 @@ class ISCSevenRiversWaterLevels(BQSTAO, ObservationMixin):
     _orderby = '_airbyte_emitted_at asc'
     _timestamp_field = 'dateTime'
     _value_field = 'depthToWaterFeet'
+    _cursor_id = '_airbyte_emitted_at'
 
     def _handle_extract(self, records):
         def key(r):
@@ -149,12 +150,12 @@ class ISCSevenRiversWaterLevels(BQSTAO, ObservationMixin):
         maxo = None
         for g, obs in groupby(sorted(records, key=key), key=key):
             obs = list(obs)
-            t = max((o[self._timestamp_field] for o in obs))
+            t = max((o[self._cursor_id] for o in obs))
             if maxo:
                 maxo = max(maxo, t)
             else:
                 maxo = t
-            yield {'monitoring_point_id': g, 'observations': obs, self._timestamp_field: maxo}
+            yield {'monitoring_point_id': g, 'observations': obs, self._cursor_id: maxo}
 
     def _transform(self, request, record):
         locationId = record['monitoring_point_id']
