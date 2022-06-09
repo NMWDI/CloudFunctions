@@ -132,7 +132,8 @@ class ISCSevenRiversDatastreams(ISCSevenRiversMonitoringPoints):
 class ISCSevenRiversWaterLevels(BQSTAO, ObservationMixin):
     _tablename = 'isc_water_levels'
     _fields = ['dry', 'invalid', 'comments',
-               'monitoring_point_id', 'dateTime', 'depthToWaterFeet']
+               'monitoring_point_id', 'dateTime', 'depthToWaterFeet',
+               '_airbyte_emitted_at']
     _limit = 500
 
     _dataset = 'levels'
