@@ -73,6 +73,12 @@ def isc_seven_rivers_datastreams(request):
     return ','.join(ret)
 
 
+def isc_seven_rivers_water_levels(request):
+    from isc_seven_rivers.entities import ISCSevenRiversWaterLevels
+    stao = ISCSevenRiversWaterLevels()
+    return stao.render(request)
+
+
 # =============== NMBGMR =====================
 def nmbgmr_locations(request):
     from nmbgmr.entities import NMBGMRLocations
