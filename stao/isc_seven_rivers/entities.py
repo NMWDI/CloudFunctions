@@ -19,7 +19,7 @@ from itertools import groupby
 from sta.definitions import FOOT, OM_Measurement
 
 try:
-    from stao import BQSTAO, LocationGeoconnexMixin
+    from stao import BQSTAO, LocationGeoconnexMixin, ObservationMixin
     from util import make_geometry_point_from_latlon, asiotid
     from constants import DTW_OBS_PROP, WATER_WELL, GWL_DS
 except ImportError:
