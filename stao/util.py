@@ -23,7 +23,7 @@ util.py This module holds utility functions.
 import json
 import logging
 import random
-from datetime import datetime
+import datetime
 
 import geojson as geojson
 import pyproj
