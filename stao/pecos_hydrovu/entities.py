@@ -26,7 +26,7 @@ except ImportError:
     from stao.constants import WATER_WELL, HYDROVU_SENSOR, DTW_OBS_PROP, GWL_DS
     from stao.stao import LocationGeoconnexMixin, BQSTAO, BaseSTAO, ObservationMixin
     from stao.util import make_geometry_point_from_utm, make_geometry_point_from_latlon, \
-    make_fuzzy_geometry_from_latlon, asiotid, make_statime
+        make_fuzzy_geometry_from_latlon, asiotid, make_statime
 
 AGENCY = 'PVACD'
 
@@ -58,10 +58,10 @@ class PHVLocations(LocationGeoconnexMixin, PHV_Site_STAO):
     _entity_tag = 'location'
 
     def _transform(self, request, record):
-        properties = {}
-        properties['agency'] = AGENCY
-        properties['id'] = record['id']
-        properties['hydrovu.description'] = record['description']
+        properties = {'agency': AGENCY,
+                      'id': record['id'],
+                      'hydrovu.description': record['description']}
+
         lat = record['latitude']
         lon = record['longitude']
 

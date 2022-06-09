@@ -13,6 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
+import datetime
+from itertools import groupby
+
 from sta.definitions import FOOT, OM_Measurement
 
 try:
@@ -20,8 +23,8 @@ try:
     from util import make_geometry_point_from_latlon, asiotid
     from constants import DTW_OBS_PROP, WATER_WELL, GWL_DS
 except ImportError:
-    from stao.stao import BQSTAO, LocationGeoconnexMixin
-    from stao.util import make_geometry_point_from_latlon, asiotid
+    from stao.stao import BQSTAO, LocationGeoconnexMixin, ObservationMixin
+    from stao.util import make_geometry_point_from_latlon, asiotid, make_statime
     from stao.constants import DTW_OBS_PROP, WATER_WELL, GWL_DS
 
 AGENCY = 'ISC_SEVEN_RIVERS'
@@ -126,6 +129,85 @@ class ISCSevenRiversDatastreams(ISCSevenRiversMonitoringPoints):
             print(f"no location for {record['name']}")
 
 
+class ISCSevenRiversWaterLevels(BQSTAO, ObservationMixin):
+    _tablename = 'isc_water_levels'
+    _fields = ['dry', 'invalid', 'comments',
+               'monitoring_point_id', 'dateTime', 'depthToWaterFeet']
+    _limit = 500
+
+    _dataset = 'levels'
+    _entity_tag = 'observation'
+
+    _orderby = '_airbyte_emitted_at asc'
+    _timestamp_field = 'dateTime'
+    _value_field = 'depthToWaterFeet'
+
+    def _handle_extract(self, records):
+        def key(r):
+            return int(r['monitoring_point_id'])
+
+        maxo = None
+        for g, obs in groupby(sorted(records, key=key), key=key):
+            obs = list(obs)
+            t = max((o[self._timestamp_field] for o in obs))
+            if maxo:
+                maxo = max(maxo, t)
+            else:
+                maxo = t
+            yield {'monitoring_point_id': g, 'observations': obs, self._timestamp_field: maxo}
+
+    def _transform(self, request, record):
+        locationId = record['monitoring_point_id']
+        locationId = int(locationId)
+        q = f"properties/source_id eq '{locationId}' and properties/agency eq '{AGENCY}'"
+        loc = self._client.get_location(query=q)
+        if not loc:
+            print(f'******* no location {locationId}')
+        else:
+            thing = self._client.get_thing(name=WATER_WELL['name'], location=loc['@iot.id'])
+            if thing:
+                try:
+                    ds = self._client.get_datastream(name=GWL_DS['name'], thing=thing['@iot.id'])
+                except StopIteration:
+                    return
+
+                if ds:
+                    # get last observation for this datastream
+                    eobs = self._client.get_observations(ds, limit=1,
+                                                         pages=1,
+                                                         verbose=False,
+                                                         orderby='phenomenonTime desc')
+                    last_obs = None
+                    eobs = list(eobs)
+                    if eobs:
+                        last_obs = make_statime(eobs[0]['phenomenonTime'])
+                    print(f'last obs datastream={ds} lastobs={last_obs} ')
+                    vs = []
+                    components = ['phenomenonTime', 'resultTime', 'result']
+                    for obs in record['observations']:
+                        dt = obs[self._timestamp_field]
+                        if not dt:
+                            print(f'skipping invalid datetime. {dt}')
+                            continue
+
+                        if not last_obs or (last_obs and dt > last_obs):
+                            dt = datetime.datetime.utcfromtimestamp(dt/1000)
+                            t = dt.strftime('%Y-%m-%dT%H:%M:%S.000Z')
+                            v = obs[self._value_field]
+                            try:
+                                v = float(v)
+                                vs.append((t, t, v))
+                            except (TypeError, ValueError) as e:
+                                print(f'skipping. error={e}. v={v}')
+
+                    if vs:
+                        payload = {'Datastream': asiotid(ds),
+                                   'observations': vs,
+                                   'components': components}
+                        print('------------- payload', payload)
+                        return payload
+
+
 def etl_locations(request):
     stao = ISCSevenRiversLocationsSTAO()
     return stao.render(request)
@@ -137,5 +219,7 @@ def etl_things(request):
 
 
 if __name__ == '__main__':
-    etl_things(None)
+    # etl_things(None)
+    stao = ISCSevenRiversWaterLevels()
+    stao.render(None, True)
 # ============= EOF =============================================
