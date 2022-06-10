@@ -166,6 +166,13 @@ class ISCSevenRiversWaterLevels(BQSTAO, ObservationMixin):
                    self._cursor_id: maxo}
 
     def _transform(self, request, record):
+        def exists(obs, t, v):
+            for e in obs:
+                tt = make_statime(e['phenomenonTime'])
+                tt.replace(tzinfo=utc)
+                if tt == t and v == e['result']:
+                    return True
+
         locationId = record['monitoring_point_id']
         locationId = int(locationId)
         q = f"properties/source_id eq '{locationId}' and properties/agency eq '{AGENCY}'"
@@ -182,17 +189,18 @@ class ISCSevenRiversWaterLevels(BQSTAO, ObservationMixin):
 
                 if ds:
                     # get last observation for this datastream
-                    eobs = self._client.get_observations(ds, limit=1,
-                                                         pages=1,
+                    eobs = self._client.get_observations(ds,
+                                                         # limit=1,
+                                                         # pages=1,
                                                          verbose=False,
                                                          orderby='phenomenonTime desc')
-                    last_obs = None
+                    # last_obs = None
                     eobs = list(eobs)
-                    if eobs:
-                        last_obs = make_statime(eobs[0]['phenomenonTime'])
-                        last_obs = last_obs.replace(tzinfo=utc)
+                    # if eobs:
+                    #     last_obs = make_statime(eobs[0]['phenomenonTime'])
+                    #     last_obs = last_obs.replace(tzinfo=utc)
 
-                    print(f'last obs lastobs={last_obs} datastream={ds} ')
+                    print(f'existing obs={len(eobs)} datastream={ds} ')
                     vs = []
                     components = ['phenomenonTime', 'resultTime', 'result']
                     for obs in record['observations']:
@@ -204,14 +212,18 @@ class ISCSevenRiversWaterLevels(BQSTAO, ObservationMixin):
                         dt = datetime.datetime.utcfromtimestamp(dt/1000)
                         dt = dt.replace(tzinfo=utc)
 
-                        if not last_obs or (last_obs and dt > last_obs):
-                            t = dt.strftime('%Y-%m-%dT%H:%M:%S.000Z')
-                            v = obs[self._value_field]
-                            try:
-                                v = float(v)
-                                vs.append((t, t, v))
-                            except (TypeError, ValueError) as e:
-                                print(f'skipping. error={e}. v={v}')
+                    # if not last_obs or (last_obs and dt > last_obs):
+                        t = dt.strftime('%Y-%m-%dT%H:%M:%S.000Z')
+                        v = obs[self._value_field]
+                        if exists(eobs, dt, v):
+                            print(f'skipping already exists {t}, {v}')
+                            continue
+
+                        try:
+                            v = float(v)
+                            vs.append((t, t, v))
+                        except (TypeError, ValueError) as e:
+                            print(f'skipping. error={e}. v={v}')
 
                     if vs:
                         payload = {'Datastream': asiotid(ds),
