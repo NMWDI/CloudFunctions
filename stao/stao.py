@@ -232,7 +232,7 @@ class BQSTAO(BaseSTAO):
 
         if not where:
             try:
-                obj = int(request.json.get(self._cursor_id))
+                obj = request.json.get(self._cursor_id)
                 where = f"{self._cursor_id}>{obj}"
             except (ValueError, AttributeError, TypeError) as e:
                 print('error b {}'.format(e))
