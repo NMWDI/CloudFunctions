@@ -136,7 +136,7 @@ class ISCSevenRiversWaterLevels(BQSTAO, ObservationMixin):
     _tablename = 'isc_water_levels'
     _fields = ['dry', 'invalid', 'comments',
                'monitoring_point_id', 'dateTime', 'depthToWaterFeet',
-               '_airbyte_emitted_at']
+               '_airbyte_ab_id']
     _limit = 500
 
     _dataset = 'levels'
@@ -145,7 +145,7 @@ class ISCSevenRiversWaterLevels(BQSTAO, ObservationMixin):
     _orderby = '_airbyte_ab_id asc'
     _timestamp_field = 'dateTime'
     _value_field = 'depthToWaterFeet'
-    _cursor_id = '_airbyte_emitted_at'
+    # _cursor_id = '_airbyte_emitted_at'
     _cursor_id = '_airbyte_ab_id'
 
     def _handle_extract(self, records):
