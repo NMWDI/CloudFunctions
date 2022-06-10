@@ -19,7 +19,6 @@ from itertools import groupby
 from sta.definitions import FOOT, OM_Measurement
 import pytz
 
-from stao.nmbgmr.entities import DummyRequest
 
 try:
     from stao import BQSTAO, LocationGeoconnexMixin, ObservationMixin
@@ -230,6 +229,8 @@ def etl_things(request):
 
 
 if __name__ == '__main__':
+    from stao.nmbgmr.entities import DummyRequest
+
     # etl_things(None)
     stao = ISCSevenRiversWaterLevels()
     # stao.render(None, True)
