@@ -215,15 +215,15 @@ class ISCSevenRiversWaterLevels(BQSTAO, ObservationMixin):
                     # if not last_obs or (last_obs and dt > last_obs):
                         t = dt.strftime('%Y-%m-%dT%H:%M:%S.000Z')
                         v = obs[self._value_field]
+                        try:
+                            v = float(v)
+                        except (TypeError, ValueError) as e:
+                            print(f'skipping. error={e}. v={v}')
+
                         if exists(eobs, dt, v):
                             print(f'skipping already exists {t}, {v}')
                             continue
-
-                        try:
-                            v = float(v)
-                            vs.append((t, t, v))
-                        except (TypeError, ValueError) as e:
-                            print(f'skipping. error={e}. v={v}')
+                        vs.append((t, t, v))
 
                     if vs:
                         payload = {'Datastream': asiotid(ds),
