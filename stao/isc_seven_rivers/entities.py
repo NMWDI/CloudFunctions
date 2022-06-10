@@ -19,6 +19,8 @@ from itertools import groupby
 from sta.definitions import FOOT, OM_Measurement
 import pytz
 
+from stao.nmbgmr.entities import DummyRequest
+
 try:
     from stao import BQSTAO, LocationGeoconnexMixin, ObservationMixin
     from util import make_geometry_point_from_latlon, asiotid, make_statime
@@ -230,5 +232,12 @@ def etl_things(request):
 if __name__ == '__main__':
     # etl_things(None)
     stao = ISCSevenRiversWaterLevels()
-    stao.render(None, True)
+    # stao.render(None, True)
+    for i in range(2):
+        if i:
+            # state = json.loads(ret)
+            dr = DummyRequest(state)
+        else:
+            dr = DummyRequest({})
+        state = stao.render(dr, True)
 # ============= EOF =============================================
