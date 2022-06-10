@@ -151,6 +151,7 @@ class ISCSevenRiversWaterLevels(BQSTAO, ObservationMixin):
             return int(r['monitoring_point_id'])
 
         maxo = None
+        records = [r for r in records if r[self._value_field] is not None]
         for g, obs in groupby(sorted(records, key=key), key=key):
             obs = list(obs)
             t = max((o[self._cursor_id] for o in obs))
@@ -185,7 +186,9 @@ class ISCSevenRiversWaterLevels(BQSTAO, ObservationMixin):
                     eobs = list(eobs)
                     if eobs:
                         last_obs = make_statime(eobs[0]['phenomenonTime'])
-                    print(f'last obs datastream={ds} lastobs={last_obs} ')
+                        last_obs = last_obs.replace(tzinfo=utc)
+
+                    print(f'last obs lastobs={last_obs} datastream={ds} ')
                     vs = []
                     components = ['phenomenonTime', 'resultTime', 'result']
                     for obs in record['observations']:
@@ -196,8 +199,7 @@ class ISCSevenRiversWaterLevels(BQSTAO, ObservationMixin):
 
                         dt = datetime.datetime.utcfromtimestamp(dt/1000)
                         dt = dt.replace(tzinfo=utc)
-                        if last_obs:
-                            last_obs = last_obs.replace(tzinfo=utc)
+
                         if not last_obs or (last_obs and dt > last_obs):
                             t = dt.strftime('%Y-%m-%dT%H:%M:%S.000Z')
                             v = obs[self._value_field]
