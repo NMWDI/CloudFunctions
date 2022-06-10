@@ -160,7 +160,9 @@ class ISCSevenRiversWaterLevels(BQSTAO, ObservationMixin):
                 maxo = max(maxo, t)
             else:
                 maxo = t
-            yield {'monitoring_point_id': g, 'observations': obs, self._cursor_id: maxo}
+
+            yield {'monitoring_point_id': g, 'observations': obs,
+                   self._cursor_id: maxo.strftime('%Y-%m-%dT%H:%M:%S.000Z')}
 
     def _transform(self, request, record):
         locationId = record['monitoring_point_id']
