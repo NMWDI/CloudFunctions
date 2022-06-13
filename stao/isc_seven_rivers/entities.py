@@ -19,19 +19,21 @@ from itertools import groupby
 from sta.definitions import FOOT, OM_Measurement
 import pytz
 
-
 try:
     from stao import BQSTAO, LocationGeoconnexMixin, ObservationMixin
-    from util import make_geometry_point_from_latlon, asiotid, make_statime
-    from constants import DTW_OBS_PROP, WATER_WELL, GWL_DS
+    from util import make_geometry_point_from_latlon, asiotid, make_statime, observation_exists
+    from constants import DTW_OBS_PROP, WATER_WELL, GWL_DS, TOTALIZER_DS, TOTALIZER_OBSERVED_PROPERTIES, \
+        TOTALIZER_SENSOR
 except ImportError:
     from stao.stao import BQSTAO, LocationGeoconnexMixin, ObservationMixin
-    from stao.util import make_geometry_point_from_latlon, asiotid, make_statime
-    from stao.constants import DTW_OBS_PROP, WATER_WELL, GWL_DS
+    from stao.util import make_geometry_point_from_latlon, asiotid, make_statime, observation_exists
+    from stao.constants import DTW_OBS_PROP, WATER_WELL, GWL_DS, TOTALIZER_DS, TOTALIZER_OBSERVED_PROPERTIES, \
+        TOTALIZER_SENSOR
 
 AGENCY = 'ISC_SEVEN_RIVERS'
 
-utc=pytz.UTC
+utc = pytz.UTC
+
 
 class ISCSevenRiversMonitoringPoints(BQSTAO):
     _fields = ['id', 'name', 'type', 'comments', 'latitude', 'longitude', 'groundSurfaceElevationFeet']
@@ -116,15 +118,62 @@ class ISCSevenRiversDatastreams(ISCSevenRiversMonitoringPoints):
                 obsprop_id = asiotid(obsprop)
                 sensor_id = asiotid(sensor)
                 properties = {}
-                payload = { 'name': GWL_DS['name'],
-                            'description': GWL_DS['description'],
-                            'Thing': thing_id,
-                            'ObservedProperty': obsprop_id,
-                            'Sensor': sensor_id,
-                            'unitOfMeasurement': FOOT,
-                            'observationType': OM_Measurement,
-                            'properties': properties
-                            }
+                payload = {'name': GWL_DS['name'],
+                           'description': GWL_DS['description'],
+                           'Thing': thing_id,
+                           'ObservedProperty': obsprop_id,
+                           'Sensor': sensor_id,
+                           'unitOfMeasurement': FOOT,
+                           'observationType': OM_Measurement,
+                           'properties': properties
+                           }
+                return payload
+            else:
+                print(f'no thing (WaterWell) for {lid}')
+        else:
+            print(f"no location for {record['name']}")
+
+
+class ISCSevenRiversTotalizerDatastreams(ISCSevenRiversMonitoringPoints):
+    _entity_tag = 'datastream'
+
+    def _transform(self, request, record):
+
+        loc = self._client.get_location(f"name eq '{record['name']}' and properties/agency eq '{AGENCY}'")
+        if loc:
+            lid = loc['@iot.id']
+
+            thing = self._client.get_thing(name=WATER_WELL, location=lid)
+            if thing:
+                # make sure to use SimpleSTAO to add the necessary ObsProps and Sensors
+                obsprops = []
+                uoms = []
+                types = []
+                for obspropd in TOTALIZER_OBSERVED_PROPERTIES:
+                    prop = next(self._client.get_observed_properties(name=obspropd['name']))
+                    obsprops.append(prop)
+                    uoms.append(obspropd['uom'])
+                    types.append(obspropd['type'])
+
+                sensor = next(self._client.get_sensors(name=TOTALIZER_SENSOR['name']))
+
+                thing_id = asiotid(thing)
+
+                sensor_id = asiotid(sensor)
+                properties = {}
+
+                payload = {'name': TOTALIZER_DS['name'],
+                           'description': TOTALIZER_DS['description'],
+                           'Thing': thing_id,
+                           'Sensor': sensor_id,
+                           'ObservedProperty': obsprops,
+
+                           # 'ObservedProperty': obsprop_id,
+                           'unitOfMeasurements': uoms,
+                           'multiObservationDataTypes': types,
+                           # 'observationType': OM_Measurement,
+                           'properties': properties
+                           }
                 return payload
             else:
                 print(f'no thing (WaterWell) for {lid}')
@@ -145,92 +194,14 @@ class ISCSevenRiversWaterLevels(BQSTAO, ObservationMixin):
     _orderby = '_airbyte_ab_id asc'
     _timestamp_field = 'dateTime'
     _value_field = 'depthToWaterFeet'
-    # _cursor_id = '_airbyte_emitted_at'
     _cursor_id = '_airbyte_ab_id'
+    _location_field = 'monitoring_point_id'
+    _agency = AGENCY
+    _thing_name = WATER_WELL['name']
+    _datastream_name = GWL_DS['name']
 
-    def _handle_extract(self, records):
-        def key(r):
-            return int(r['monitoring_point_id'])
 
-        maxo = None
-        records = [r for r in records if r[self._value_field] is not None]
-        for g, obs in groupby(sorted(records, key=key), key=key):
-            obs = list(obs)
-            t = max((o[self._cursor_id] for o in obs))
-            if maxo:
-                maxo = max(maxo, t)
-            else:
-                maxo = t
 
-            yield {'monitoring_point_id': g, 'observations': obs,
-                   self._cursor_id: maxo}
-
-    def _transform(self, request, record):
-        def exists(obs, t, v):
-            for e in obs:
-                tt = make_statime(e['phenomenonTime'])
-                tt.replace(tzinfo=utc)
-                if tt == t and v == e['result']:
-                    return True
-
-        locationId = record['monitoring_point_id']
-        locationId = int(locationId)
-        q = f"properties/source_id eq '{locationId}' and properties/agency eq '{AGENCY}'"
-        loc = self._client.get_location(query=q)
-        if not loc:
-            print(f'******* no location {locationId}')
-        else:
-            thing = self._client.get_thing(name=WATER_WELL['name'], location=loc['@iot.id'])
-            if thing:
-                try:
-                    ds = self._client.get_datastream(name=GWL_DS['name'], thing=thing['@iot.id'])
-                except StopIteration:
-                    return
-
-                if ds:
-                    # get last observation for this datastream
-                    eobs = self._client.get_observations(ds,
-                                                         # limit=1,
-                                                         # pages=1,
-                                                         verbose=False,
-                                                         orderby='phenomenonTime desc')
-                    # last_obs = None
-                    eobs = list(eobs)
-                    # if eobs:
-                    #     last_obs = make_statime(eobs[0]['phenomenonTime'])
-                    #     last_obs = last_obs.replace(tzinfo=utc)
-
-                    print(f'existing obs={len(eobs)} datastream={ds} ')
-                    vs = []
-                    components = ['phenomenonTime', 'resultTime', 'result']
-                    for obs in record['observations']:
-                        dt = obs[self._timestamp_field]
-                        if not dt:
-                            print(f'skipping invalid datetime. {dt}')
-                            continue
-
-                        dt = datetime.datetime.utcfromtimestamp(dt/1000)
-                        dt = dt.replace(tzinfo=utc)
-
-                    # if not last_obs or (last_obs and dt > last_obs):
-                        t = dt.strftime('%Y-%m-%dT%H:%M:%S.000Z')
-                        v = obs[self._value_field]
-                        try:
-                            v = float(v)
-                        except (TypeError, ValueError) as e:
-                            print(f'skipping. error={e}. v={v}')
-
-                        if exists(eobs, dt, v):
-                            print(f'skipping already exists {t}, {v}')
-                            continue
-                        vs.append((t, t, v))
-
-                    if vs:
-                        payload = {'Datastream': asiotid(ds),
-                                   'observations': vs,
-                                   'components': components}
-                        print('------------- payload', payload)
-                        return payload
 
 
 def etl_locations(request):

@@ -27,7 +27,16 @@ import datetime
 
 import geojson as geojson
 import pyproj
+import pytz
 from sta.client import Client
+
+
+def observation_exists(obs, t, v):
+    for e in obs:
+        tt = make_statime(e['phenomenonTime'])
+        tt.replace(tzinfo=pytz.UTC)
+        if tt == t and v == e['result']:
+            return True
 
 
 def copy_properties(props, record, attrs):

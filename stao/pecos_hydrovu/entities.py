@@ -59,7 +59,7 @@ class PHVLocations(LocationGeoconnexMixin, PHV_Site_STAO):
 
     def _transform(self, request, record):
         properties = {'agency': AGENCY,
-                      'id': record['id'],
+                      'source_id': record['id'],
                       'hydrovu.description': record['description']}
 
         lat = record['latitude']
@@ -123,7 +123,7 @@ class PHVWaterLevelsDatastreams(PHV_Site_STAO):
 class PHVObservations(BQSTAO, ObservationMixin):
     _tablename = 'pecos_readings'
     _fields = ['value', 'unitId', 'timestamp',
-               'locationId', 'parameterId', 'customParameter']
+               'locationId', 'parameterId', 'customParameter', '_airbyte_ab_id']
     _limit = 500
     _where = "parameterId=4"
 
@@ -131,70 +131,14 @@ class PHVObservations(BQSTAO, ObservationMixin):
     _entity_tag = 'observation'
 
     _orderby = 'timestamp asc'
+    _location_field = 'locationId'
+    _cursor_id = '_airbyte_ab_id'
+    _datastream_name = GWL_DS['name']
+    _thing_name = WATER_WELL['name']
+    _agency = AGENCY
+    _timestamp_field = 'timestamp'
+    _value_field = 'value'
 
-    def _handle_extract(self, records):
-        def key(r):
-            return r['locationId']
-
-        maxo = None
-        for g, obs in groupby(sorted(records, key=key), key=key):
-            obs = list(obs)
-            t = max((o['timestamp'] for o in obs))
-            if maxo:
-                maxo = max(maxo, t)
-            else:
-                maxo = t
-            yield {'locationId': g, 'observations': obs, 'timestamp': maxo}
-
-    def _transform(self, request, record):
-        locationId = record['locationId']
-        q = f"properties/id eq '{locationId}' and properties/agency eq '{AGENCY}'"
-        loc = self._client.get_location(query=q)
-        if not loc:
-            print(f'******* no location {locationId}')
-        else:
-            thing = self._client.get_thing(name=WATER_WELL['name'], location=loc['@iot.id'])
-            if thing:
-                try:
-                    ds = self._client.get_datastream(name=GWL_DS['name'], thing=thing['@iot.id'])
-                except StopIteration:
-                    return
-
-                if ds:
-                    # get last observation for this datastream
-                    eobs = self._client.get_observations(ds, limit=1,
-                                                         pages=1,
-                                                         verbose=False,
-                                                         orderby='phenomenonTime desc')
-                    last_obs = None
-                    eobs = list(eobs)
-                    if eobs:
-                        last_obs = make_statime(eobs[0]['phenomenonTime'])
-                    print(f'last obs datastream={ds} lastobs={last_obs} ')
-                    vs = []
-                    components = ['phenomenonTime', 'resultTime', 'result']
-                    for obs in record['observations']:
-                        dt = obs['timestamp']
-                        if not dt:
-                            print(f'skipping invalid datetime. {dt}')
-                            continue
-
-                        if not last_obs or (last_obs and dt > last_obs):
-
-                            t = dt.strftime('%Y-%m-%dT%H:%M:%S.000Z')
-                            v = obs['value']
-                            try:
-                                v = float(v)
-                                vs.append((t, t, v))
-                            except (TypeError, ValueError) as e:
-                                print(f'skipping. error={e}. v={v}')
-
-                    if vs:
-                        payload = {'Datastream': asiotid(ds),
-                                   'observations': vs,
-                                   'components': components}
-                        print('------------- payload', payload)
-                        return payload
 
 
 if __name__ == '__main__':

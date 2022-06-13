@@ -20,9 +20,13 @@ main.py.  This module holds all the cloud function entry points.
 
 try:
     from constants import NO_DESCRIPTION, MANUAL_SENSOR, DTW_OBS_PROP, PRESSURE_SENSOR, ACOUSTIC_SENSOR, HYDROVU_SENSOR
+    from constants import NO_DESCRIPTION, MANUAL_SENSOR, DTW_OBS_PROP, PRESSURE_SENSOR, ACOUSTIC_SENSOR, \
+        TOTALIZER_OBSERVED_PROPERTIES, TOTALIZER_SENSOR
     from stao import SimpleSTAO
 except ImportError:
     from stao.constants import NO_DESCRIPTION, MANUAL_SENSOR, DTW_OBS_PROP, PRESSURE_SENSOR, ACOUSTIC_SENSOR, HYDROVU_SENSOR
+    from stao.constants import NO_DESCRIPTION, MANUAL_SENSOR, DTW_OBS_PROP, PRESSURE_SENSOR, ACOUSTIC_SENSOR,\
+        TOTALIZER_OBSERVED_PROPERTIES, TOTALIZER_SENSOR
     from stao.stao import SimpleSTAO
 
 # ======================== pvacd hydrovu ===========================
@@ -167,6 +171,20 @@ def ose_realtime_datastreams(request):
 
     return ','.join(ret)
 # =================================================
+
+
+def isc_seven_rivers_totalizer_datastreams(request):
+    from stao.isc_seven_rivers.entities import ISCSevenRiversTotalizerDatastreams
+
+    ss = SimpleSTAO()
+    ss.render('sensor', TOTALIZER_SENSOR)
+    for obspropd in TOTALIZER_OBSERVED_PROPERTIES:
+        payload = obspropd.fromkeys(('name', 'description', 'definition', 'properties'))
+        ss.render('observed_property', payload)
+
+    stao = ISCSevenRiversTotalizerDatastreams()
+    return stao.render(request)
+
 
 # =============== CABQ =====================
 def cabq_waterelevations(request):

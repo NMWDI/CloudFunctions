@@ -13,22 +13,134 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
+import datetime
 import json
+from itertools import groupby
+import pytz
 
 from google.cloud import bigquery, storage
 
 try:
-    from util import make_sta_client
+    from util import make_sta_client, observation_exists, asiotid
 except ImportError:
-    from stao.util import make_sta_client
+    from stao.util import make_sta_client, observation_exists, asiotid
 
 
 class ObservationMixin:
     """
     Observation mixin class.
     """
+
+    _entity_tag = 'observation'
+
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    #  Must define the following attributes
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    _thing_name = None
+    _datastream_name = None
+    _agency = None
+    _location_field = None
+    _timestamp_field = None
+    _value_field = None
+    _cursor_id = None
+
     def _get_load_function_name(self):
         return 'add_observations'
+
+    def _get_location(self, locationId, record):
+        q = f"properties/source_id eq '{locationId}' and properties/agency eq '{self._agency}'"
+        return self._client.get_location(query=q)
+
+    def _location_grouper(self, records):
+        def key(r):
+            return int(r[self._location_field])
+
+        return groupby(sorted(records, key=key), key=key)
+
+    def _handle_extract(self, records):
+        """
+        group the records by the location primary key
+
+        yield a dictionary of the following keys, "locationId", "observations", self._cursor_id
+
+        e.g. {"locationId": 151, "observations": [...], "_airbyte_ab_id": 7eff-... }
+
+        :param records:
+        :return:
+        """
+
+        maxo = None
+        records = [r for r in records if r[self._value_field] is not None]
+        for g, obs in self._location_grouper(records):
+            obs = list(obs)
+            t = max((o[self._cursor_id] for o in obs))
+            if maxo:
+                maxo = max(maxo, t)
+            else:
+                maxo = t
+
+            yield {'locationId': g, 'observations': obs,
+                   self._cursor_id: maxo}
+
+    def _transform(self, request, record):
+
+        locationId = record['locationId']
+        locationId = int(locationId)
+        loc = self._get_location(locationId, record)
+        if not loc:
+            print(f'******* no location {locationId}')
+        else:
+            thing = self._client.get_thing(name=self._thing_name, location=loc['@iot.id'])
+            if thing:
+                try:
+                    ds = self._client.get_datastream(name=self._datastream_name, thing=thing['@iot.id'])
+                except StopIteration:
+                    return
+
+                if ds:
+                    # get last observation for this datastream
+                    eobs = self._client.get_observations(ds,
+                                                         # limit=1,
+                                                         # pages=1,
+                                                         verbose=False,
+                                                         orderby='phenomenonTime desc')
+                    # last_obs = None
+                    eobs = list(eobs)
+                    # if eobs:
+                    #     last_obs = make_statime(eobs[0]['phenomenonTime'])
+                    #     last_obs = last_obs.replace(tzinfo=utc)
+
+                    print(f'existing obs={len(eobs)} datastream={ds} ')
+                    vs = []
+                    components = ['phenomenonTime', 'resultTime', 'result']
+                    for obs in record['observations']:
+                        dt = obs[self._timestamp_field]
+                        if not dt:
+                            print(f'skipping invalid datetime. {dt}')
+                            continue
+
+                        dt = datetime.datetime.utcfromtimestamp(dt / 1000)
+                        dt = dt.replace(tzinfo=pytz.UTC)
+
+                        # if not last_obs or (last_obs and dt > last_obs):
+                        t = dt.strftime('%Y-%m-%dT%H:%M:%S.000Z')
+                        v = obs[self._value_field]
+                        try:
+                            v = float(v)
+                        except (TypeError, ValueError) as e:
+                            print(f'skipping. error={e}. v={v}')
+
+                        if observation_exists(eobs, dt, v):
+                            print(f'skipping already exists {t}, {v}')
+                            continue
+                        vs.append((t, t, v))
+
+                    if vs:
+                        payload = {'Datastream': asiotid(ds),
+                                   'observations': vs,
+                                   'components': components}
+                        print('------------- payload', payload)
+                        return payload
 
 
 class STAO:
@@ -36,6 +148,7 @@ class STAO:
     Base class for all SensorThings Access Objects
     here to enforce that subclasses implement a render method
     """
+
     def render(self, *args, **kw):
         raise NotImplementedError
 
@@ -74,7 +187,6 @@ class SimpleSTAO(STAO):
 
 
 class BaseSTAO(STAO):
-
     """
     Base class for all more advanced STAOs.
 
@@ -171,7 +283,7 @@ class BaseSTAO(STAO):
                      'limit': self._limit,
                      }
             self.state = state
-        self.state['counter'] = counter+1
+        self.state['counter'] = counter + 1
         return self.state
 
     def _load_record(self, payload, dry):

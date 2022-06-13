@@ -17,6 +17,7 @@
 constants.py  A list of global static variables
 
 """
+from sta.definitions import FOOT, OTYPES
 
 WELL_LOCATION_DESCRIPTION = 'Location of well where measurements are made'
 
@@ -73,6 +74,26 @@ GWL_DS = {'name': 'Groundwater Levels',
 
 GWE_DS = {'name': 'Groundwater Elevations',
           'description': 'Elevation of groundwater in feet above msl'}
+
+TOTALIZER_DS = {'name': 'Totalizer',
+                'description': 'Time series of multiple pump totalizer properties'}
+
+KWH = {"name": "kilowatt-hours",
+       "symbol": "KWH",
+       "definition": "http://qudt.org/vocab/unit/KiloW-HR"}
+
+TOTALIZER_SENSOR = {'name': 'TotatizerSensor',
+                    'description': NO_DESCRIPTION,
+                    'encodingType': ENCODING_PDF,
+                    'metadata': NO_METADATA
+                    }
+
+TOTALIZER_OBSERVED_PROPERTIES = [{'name': 'NMISC Volume',
+                                  'properties': {'source_attribute': 'nmiscVolumeKWH'},
+                                  'description': '',
+                                  'definition': NO_DEFINITION,
+                                  'uom': KWH,
+                                  'type': OTYPES['double']
+                                  },
+                                 ]
 # ============= EOF =============================================
-
-
