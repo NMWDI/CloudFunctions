@@ -199,4 +199,11 @@ def cabq_waterdepths(request):
     stao = CABQWaterDepths()
     ret = stao.render(request)
     return ret
+
+# ============== EBID ========================
+def ebid_locations(request):
+    from ebid.entities import EBIDLocations
+    stao = EBIDLocations()
+    return stao.render(request)
+
 # ============= EOF =============================================
