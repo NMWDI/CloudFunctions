@@ -21,9 +21,11 @@ import pytz
 from google.cloud import bigquery, storage
 
 try:
-    from util import make_sta_client, observation_exists, asiotid
+    from util import make_sta_client, observation_exists, asiotid, make_geometry_point_from_latlon
+    from vocab import vocab_factory
 except ImportError:
-    from stao.util import make_sta_client, observation_exists, asiotid
+    from stao.util import make_sta_client, observation_exists, asiotid, make_geometry_point_from_latlon
+    from stao.vocab import vocab_factory
 
 
 class ObservationMixin:
@@ -199,12 +201,17 @@ class BaseSTAO(STAO):
     _limit = None
     _entity_tag = None
     _cursor_id = 'OBJECTID'
+    _vocab_tag = None
 
     def __init__(self):
         """
         """
         self._client = make_sta_client()
         self.state = {}
+        self._vocab_mapper = vocab_factory(self._vocab_tag)
+
+    def toST(self, *args, **kw):
+        return self._vocab_mapper.toST(*args, **kw)
 
     def render(self, request, dry=False):
         """
@@ -385,6 +392,62 @@ class BQSTAO(BaseSTAO):
 
     def _handle_extract(self, records):
         return records
+
+class DatastreamMixin:
+    def _make_datastream_payload(self, record, tag, agency):
+        thing = self._get_thing(record, agency)
+        if thing:
+            dtw = self.toST(f'{tag}.observed_property.name')
+            sn = self.toST(f'{tag}.sensor.name')
+            obsprop = next(self._client.get_observed_properties(name=dtw))
+            sensor = next(self._client.get_sensors(name=sn))
+
+            dtwbgs = {'name': self.toST(f'{tag}.datastream.name'),
+                      'description': self.toST(f'{tag}.datastream.description'),
+                      'Sensor': asiotid(sensor),
+                      'ObservedProperty': asiotid(obsprop),
+                      'Thing': asiotid(thing),
+                      'unitOfMeasurement': self.toST(f'{tag}.unitOfMeasurement'),
+                      'observationType': self.toST(f'{tag}.observationType')
+                      }
+            return dtwbgs
+
+    def _get_thing(self, record, agency):
+        name = self.toST('location.name', record)
+        q = f"name eq '{name}' and properties/agency eq '{agency}'"
+        loc = self._client.get_location(query=q)
+        if not loc:
+            print(f'------------ failed locating {name}')
+            return
+
+        return self._client.get_thing(location=loc['@iot.id'],
+                                       name=self.toST('thing.name'))
+
+
+class ThingMixin:
+    def _make_thing_payload(self, record):
+        name = self.toST('location.name', record)
+        location = self._client.get_location(f"name eq '{name}'")
+        payload = {}
+        if location:
+            payload = {'name': self.toST('thing.name', record),
+                       'Locations': [{'@iot.id': location['@iot.id']}],
+                       'description': self.toST('thing.description', record),
+                       }
+        return payload
+
+
+class LocationMixin:
+    def _make_location_payload(self, record):
+        lat = self.toST('location.latitude', record)
+        lon = self.toST('location.longitude', record)
+
+        payload = {'name': self.toST('location.name', record),
+                   'description': self.toST('location.description', record),
+                   'location': make_geometry_point_from_latlon(lat, lon),
+                   "encodingType": "application/vnd.geo+json",
+                   }
+        return payload
 
 
 class LocationGeoconnexMixin:
