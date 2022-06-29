@@ -203,10 +203,10 @@ class BaseSTAO(STAO):
     _cursor_id = 'OBJECTID'
     _vocab_tag = None
 
-    def __init__(self):
+    def __init__(self, secret_id=None, project_id=None):
         """
         """
-        self._client = make_sta_client()
+        self._client = make_sta_client(project_id=project_id, secret_id=secret_id)
         self.state = {}
         self._vocab_mapper = vocab_factory(self._vocab_tag)
 

@@ -168,7 +168,7 @@ def make_statime(t):
     return st
 
 
-def make_sta_client(dry=False, project_id=None, secret_id=None):
+def make_sta_client(project_id=None, secret_id=None):
     from google.cloud import secretmanager
 
     if project_id is None:
