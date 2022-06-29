@@ -33,7 +33,7 @@ except ImportError:
 
 
 class EBID_Site_STAO(BQSTAO):
-    _fields = ['location', 'client_id', 'elevation', 'system_id', 'or_site_id',
+    _fields = ['site_id','location', 'client_id', 'elevation', 'system_id', 'or_site_id',
                'latitude_dec', 'longitude_dec' ]
 
     _dataset = 'ebid'
