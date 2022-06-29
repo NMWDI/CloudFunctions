@@ -18,29 +18,22 @@ from itertools import groupby
 from sta.definitions import FOOT, OM_Measurement
 
 try:
-    from constants import WATER_WELL
+    from constants import WATER_WELL, HYDROVU_SENSOR, DTW_OBS_PROP, GWL_DS
     from stao import LocationGeoconnexMixin, BQSTAO, BaseSTAO, ObservationMixin
     from util import make_geometry_point_from_utm, make_geometry_point_from_latlon, make_fuzzy_geometry_from_latlon, \
         LOCATION_DESCRIPTION, asiotid, make_statime
 except ImportError:
     from stao.constants import WATER_WELL, HYDROVU_SENSOR, DTW_OBS_PROP, GWL_DS
-    from stao.stao import LocationGeoconnexMixin, BQSTAO, BaseSTAO, ObservationMixin
+    from stao.stao import LocationGeoconnexMixin, BQSTAO, BaseSTAO, ObservationMixin, LocationMixin, ThingMixin, \
+        DatastreamMixin
     from stao.util import make_geometry_point_from_utm, make_geometry_point_from_latlon, \
         make_fuzzy_geometry_from_latlon, asiotid, make_statime
 
 AGENCY = 'PVACD'
 
 
-def clean_name(name):
-    """
-    remove level/Level from the name
-    :param name:
-    :return:
-    """
-    return name.replace('level', '').replace('Level', '')
-
-
 class PHV_Site_STAO(BQSTAO):
+    _vocab_tag = 'phv'
     _fields = ['id', 'name', 'latitude', 'longitude', 'description']
 
     _dataset = 'locations'
@@ -54,70 +47,38 @@ class PHV_Site_STAO(BQSTAO):
         return f"id={record['id']}, name={record['name']}"
 
 
-class PHVLocations(LocationGeoconnexMixin, PHV_Site_STAO):
+class PHVLocations(LocationGeoconnexMixin, PHV_Site_STAO, LocationMixin):
     _entity_tag = 'location'
 
     def _transform(self, request, record):
-        properties = {'agency': AGENCY,
-                      'source_id': record['id'],
-                      'hydrovu.description': record['description']}
+        payload = self._make_location_payload(record)
 
-        lat = record['latitude']
-        lon = record['longitude']
+        source_id = self.toST('location.properties.source_id', record)
+        hvd = self.toST('location.properties.hydrovu_description', record)
 
-        payload = {'name': clean_name(record['name']),
-                   'description': 'Location of well where measurements are made',
-                   'properties': properties,
-                   'location': make_geometry_point_from_latlon(lat, lon),
-                   "encodingType": "application/vnd.geo+json",
-                   }
-
+        payload['properties'] = {'agency': AGENCY,
+                                 'source_id': source_id,
+                                 'hydrovu.description': hvd}
         return payload
 
 
-class PHVThings(PHV_Site_STAO):
+class PHVThings(PHV_Site_STAO, ThingMixin):
     _entity_tag = 'thing'
 
     def _transform(self, request, record):
-        name = clean_name(record['name'])
-        location = self._client.get_location(f"name eq '{name}'")
-
-        payload = {'name': WATER_WELL['name'],
-                   'Locations': [{'@iot.id': location['@iot.id']}],
-                   'description': WATER_WELL['description'],
-                   'properties': {'agency': AGENCY,
-                                  'source_id': record['id']}
-                   }
+        payload = self._make_thing_payload(record)
+        payload['properties'] = {'agency': AGENCY,
+                                 'source_id': self.toST('thing.properties.source_id', record)}
 
         return payload
 
 
-class PHVWaterLevelsDatastreams(PHV_Site_STAO):
+class PHVWaterLevelsDatastreams(PHV_Site_STAO, DatastreamMixin):
     _entity_tag = 'datastream'
 
     def _transform(self, request, record):
-        name = clean_name(record['name'])
-        q = f"name eq '{name}' and properties/agency eq '{AGENCY}'"
-        loc = self._client.get_location(query=q)
-        if not loc:
-            print(f'------------ failed locating {name}')
-            return
-
-        thing = self._client.get_thing(location=loc['@iot.id'], name=WATER_WELL['name'])
-        if thing:
-            obsprop = next(self._client.get_observed_properties(name=DTW_OBS_PROP['name']))
-            sensor = next(self._client.get_sensors(name=HYDROVU_SENSOR['name']))
-            properties = {}
-            dtwbgs = {'name': GWL_DS['name'],
-                      'description': GWL_DS['description'],
-                      'Sensor': asiotid(sensor),
-                      'ObservedProperty': asiotid(obsprop),
-                      'Thing': asiotid(thing),
-                      'unitOfMeasurement': FOOT,
-                      'observationType': OM_Measurement,
-                      'properties': properties
-                      }
-            return dtwbgs
+        payload = self._make_datastream_payload(record, 'gwl', AGENCY)
+        payload['properties'] = {}
 
 
 class PHVObservations(BQSTAO, ObservationMixin):
@@ -140,9 +101,9 @@ class PHVObservations(BQSTAO, ObservationMixin):
     _value_field = 'value'
 
 
-
 if __name__ == '__main__':
     phv = PHVLocations()
+    # phv = PHVThings()
     phv.render(None, dry=True)
 
 # ============= EOF =============================================
