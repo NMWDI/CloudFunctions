@@ -68,7 +68,7 @@ class EBIDLocations(LocationGeoconnexMixin, EBID_Site_STAO):
         # self._client = make_sta_client(secret_id="nmwdi_st_dev")
 
         payload = {'name': record['site_id'].upper(),
-                   'description': WELL_LOCATION_DESCRIPTION,
+                   'description': record['location'], # need to separate 
                    'properties': properties,
                    'location': make_geometry_point_from_latlon(lat, lon),
                    "encodingType": "application/vnd.geo+json",
