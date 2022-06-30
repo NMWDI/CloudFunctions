@@ -22,7 +22,7 @@ from sta.util import statime
 
 try:
     from stao import BQSTAO, LocationGeoconnexMixin, ObservationMixin
-    from util import make_geometry_point_from_latlon, asiotid, make_statime
+    from util import make_geometry_point_from_latlon, asiotid, make_statime, make_sta_client
     from constants import GWL_DS, DTW_OBS_PROP, MANUAL_SENSOR, PRESSURE_SENSOR, WATER_QUANTITY, ACOUSTIC_SENSOR, \
         WELL_LOCATION_DESCRIPTION, WATER_WELL
 except ImportError:
