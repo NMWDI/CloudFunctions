@@ -95,7 +95,8 @@ class PHVObservations(ObservationMixin, BQSTAO):
     _dataset = 'levels'
     _entity_tag = 'observation'
 
-    _orderby = 'timestamp asc'
+    # _orderby = 'timestamp asc'
+    _orderby = '_airbyte_ab_id asc'
     _location_field = 'locationId'
     _cursor_id = '_airbyte_ab_id'
     _datastream_name = GWL_DS['name']
@@ -124,14 +125,16 @@ if __name__ == '__main__':
             return self._p
 
     phv = PHVObservations()
-    phv.render(None, dry=True)
-    # for i in range(2):
-    #     if i:
-    #         # state = json.loads(ret)
-    #         dr = DummyRequest(state)
-    #     else:
-    #         dr = DummyRequest({})
-    #
-    #     state = phv.render(dr)
+    # phv.render(None, dry=False)
+    state = None
+    for i in range(2):
+        print(i, '---------------------------', state)
+        if i:
+            # state = json.loads(ret)
+            dr = DummyRequest(state)
+        else:
+            dr = DummyRequest({})
+
+        state = phv.render(dr)
 
 # ============= EOF =============================================

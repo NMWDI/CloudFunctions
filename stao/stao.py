@@ -349,9 +349,6 @@ class BQSTAO(BaseSTAO):
             print('error a {}'.format(e))
             where = None
 
-        if self._where:
-            where = self._where
-
         if not where:
             try:
                 if self._cursor_id == 'OBJECTID':
@@ -364,6 +361,12 @@ class BQSTAO(BaseSTAO):
             except (ValueError, AttributeError, TypeError) as e:
                 print('error b {}'.format(e))
                 where = None
+
+        if self._where:
+            if where:
+                where = f'{where} and {self._where}'
+            else:
+                where = self._where
 
         try:
             self._limit = int(request.json.get('limit'))
@@ -395,6 +398,7 @@ class BQSTAO(BaseSTAO):
 
     def _handle_extract(self, records):
         return records
+
 
 class DatastreamMixin:
     def _make_datastream_payload(self, record, tag, agency):
