@@ -19,13 +19,14 @@ from sta.definitions import FOOT, OM_Measurement
 
 try:
     from constants import WATER_WELL, HYDROVU_SENSOR, DTW_OBS_PROP, GWL_DS
-    from stao import LocationGeoconnexMixin, BQSTAO, BaseSTAO, ObservationMixin, DatastreamMixin, SimpleSTAO
-    from util import make_geometry_point_from_utm, make_geometry_point_from_latlon, make_fuzzy_geometry_from_latlon, \
-        LOCATION_DESCRIPTION, asiotid, make_statime
+    from stao import LocationGeoconnexMixin, BQSTAO, BaseSTAO, ObservationMixin, LocationMixin, \
+        ThingMixin, DatastreamMixin, SimpleSTAO
+    from util import make_geometry_point_from_utm, make_geometry_point_from_latlon, \
+        make_fuzzy_geometry_from_latlon, asiotid, make_statime
 except ImportError:
     from stao.constants import WATER_WELL, HYDROVU_SENSOR, DTW_OBS_PROP, GWL_DS
-    from stao.stao import LocationGeoconnexMixin, BQSTAO, BaseSTAO, ObservationMixin, LocationMixin, ThingMixin, \
-    DatastreamMixin, SimpleSTAO
+    from stao.stao import LocationGeoconnexMixin, BQSTAO, BaseSTAO, ObservationMixin, LocationMixin, \
+        ThingMixin, DatastreamMixin, SimpleSTAO
     from stao.util import make_geometry_point_from_utm, make_geometry_point_from_latlon, \
         make_fuzzy_geometry_from_latlon, asiotid, make_statime
 
