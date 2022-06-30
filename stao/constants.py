@@ -25,6 +25,8 @@ WATER_WELL = {'name': 'Water Well',
               'description': 'Well drilled or set into subsurface for the purposes '
                              'of pumping water or monitoring groundwater'}
 
+STREAM_GAUGE = {'name': 'Stream Gauge',
+                'description': 'Stream gauge for measuring flow rate'}
 
 NO_DESCRIPTION = 'No Description'
 NO_DEFINITION = 'No Definition'
@@ -65,6 +67,11 @@ surface (converted from acoustic device). Not Provisional. Quality Controlled'''
                    }
 
 HYDROVU_SENSOR = {'name': 'VuLink',
+                  'description': NO_DESCRIPTION,
+                  'encodingType': ENCODING_PDF,
+                  'metadata': NO_METADATA}
+
+ONERAIN_SENSOR = {'name': 'OneRain',
                   'description': NO_DESCRIPTION,
                   'encodingType': ENCODING_PDF,
                   'metadata': NO_METADATA}

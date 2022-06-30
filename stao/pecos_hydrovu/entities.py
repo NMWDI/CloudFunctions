@@ -108,6 +108,10 @@ class PHVObservations(ObservationMixin, BQSTAO):
     def _extract_timestamp(self, dt):
         return dt
 
+    def _value_converter(self, v):
+        """convert m to ft"""
+        return v * 3.281
+
 
 if __name__ == '__main__':
     # phv = PHVLocations()
@@ -116,25 +120,34 @@ if __name__ == '__main__':
     # phv = PHVWaterLevelsDatastreams()
     # ss = SimpleSTAO()
     # ss.render('sensor', HYDROVU_SENSOR)
-    class DummyRequest:
-        def __init__(self, p):
-            self._p = p
-
-        @property
-        def json(self):
-            return self._p
-
-    phv = PHVObservations()
+    # class DummyRequest:
+    #     def __init__(self, p):
+    #         self._p = p
+    #
+    #     @property
+    #     def json(self):
+    #         return self._p
+    #
+    # phv = PHVObservations()
     # phv.render(None, dry=False)
-    state = None
-    for i in range(2):
-        print(i, '---------------------------', state)
-        if i:
-            # state = json.loads(ret)
-            dr = DummyRequest(state)
-        else:
-            dr = DummyRequest({})
-
-        state = phv.render(dr)
-
+    # state = None
+    # for i in range(2):
+    #     print(i, '---------------------------', state)
+    #     if i:
+    #         # state = json.loads(ret)
+    #         dr = DummyRequest(state)
+    #     else:
+    #         dr = DummyRequest({})
+    #
+    #     state = phv.render(dr)
+    # phv = PHVLocations()
+    #
+    # phv = PHVThings()
+    # phv.render(None, dry=False)
+    #
+    # phv = PHVWaterLevelsDatastreams()
+    # phv.render(None, dry=False)
+    #
+    phv = PHVObservations()
+    phv.render(None, dry=False)
 # ============= EOF =============================================

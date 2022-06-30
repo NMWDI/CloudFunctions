@@ -35,6 +35,8 @@ class ObservationMixin:
 
     _entity_tag = 'observation'
 
+    _value_converter = None
+
     # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     #  Must define the following attributes
     # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -132,6 +134,9 @@ class ObservationMixin:
                         v = obs[self._value_field]
                         try:
                             v = float(v)
+                            if self._value_converter:
+                                v = self._value_converter(v)
+
                         except (TypeError, ValueError) as e:
                             print(f'skipping. error={e}. v={v}')
 
