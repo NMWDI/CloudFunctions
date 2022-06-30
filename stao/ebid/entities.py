@@ -41,6 +41,9 @@ class EBID_Site_STAO(BQSTAO):
 
     _limit = 100
     _orderby = 'or_site_id asc'
+    def __init__(self):
+        self._client = make_sta_client(secret_id='nmwdi_st_dev')
+        self.state = {}
 
 
     def _transform_message(self, record):
@@ -62,7 +65,7 @@ class EBIDLocations(LocationGeoconnexMixin, EBID_Site_STAO):
         #make_sta_client
         #    self._client = make_sta_client(dry=False,project_id="
         # REPLACE DEFAULT STA CLIENT OBJECT WITH TEST ENDPOINT BY USING SECRET CREDENTIALS NAMED 'nmwdi_st_dev'
-        self._client = make_sta_client(secret_id="nmwdi_st_dev")
+        # self._client = make_sta_client(secret_id="nmwdi_st_dev")
 
         payload = {'name': record['site_id'].upper(),
                    'description': WELL_LOCATION_DESCRIPTION,
