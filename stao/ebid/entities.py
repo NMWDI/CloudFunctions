@@ -42,12 +42,15 @@ class EBID_Site_STAO(BQSTAO):
     _limit = 100
     _orderby = 'or_site_id asc'
 
+
     def _transform_message(self, record):
         return f"or_site_id={record['or_site_id']}"
 
 
 class EBIDLocations(LocationGeoconnexMixin, EBID_Site_STAO):
     _entity_tag = 'location'
+
+    _cursor_id = "or_site_id"
 
     def _transform(self, request, record):
         properties = {k: record[k] for k in ('site_id', 'location', 'elevation', 'or_site_id','latitude_dec','longitude_dec' )}
