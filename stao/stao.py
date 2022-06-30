@@ -84,6 +84,9 @@ class ObservationMixin:
             yield {'locationId': g, 'observations': obs,
                    self._cursor_id: maxo}
 
+    def _extract_timestamp(self, dt):
+        return dt/1000
+
     def _transform(self, request, record):
 
         locationId = record['locationId']
@@ -117,11 +120,11 @@ class ObservationMixin:
                     components = ['phenomenonTime', 'resultTime', 'result']
                     for obs in record['observations']:
                         dt = obs[self._timestamp_field]
+                        dt = self._extract_timestamp(dt)
                         if not dt:
                             print(f'skipping invalid datetime. {dt}')
                             continue
-
-                        dt = datetime.datetime.utcfromtimestamp(dt / 1000)
+                        dt = datetime.datetime.utcfromtimestamp(dt)
                         dt = dt.replace(tzinfo=pytz.UTC)
 
                         # if not last_obs or (last_obs and dt > last_obs):
@@ -136,7 +139,7 @@ class ObservationMixin:
                             print(f'skipping already exists {t}, {v}')
                             continue
                         vs.append((t, t, v))
-
+                    print(vs)
                     if vs:
                         payload = {'Datastream': asiotid(ds),
                                    'observations': vs,

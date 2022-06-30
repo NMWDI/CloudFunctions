@@ -52,6 +52,11 @@ def pecos_hydrovu_waterlevel_datastreams(request):
     return stao.render(request)
 
 
+def pecos_hydrovu_water_levels(request):
+    from pecos_hydrovu.entities import PHVObservations
+    stao = PHVObservations()
+    return stao.render(request)
+
 # =================================================
 
 

@@ -19,13 +19,13 @@ from sta.definitions import FOOT, OM_Measurement
 
 try:
     from constants import WATER_WELL, HYDROVU_SENSOR, DTW_OBS_PROP, GWL_DS
-    from stao import LocationGeoconnexMixin, BQSTAO, BaseSTAO, ObservationMixin
+    from stao import LocationGeoconnexMixin, BQSTAO, BaseSTAO, ObservationMixin, DatastreamMixin, SimpleSTAO
     from util import make_geometry_point_from_utm, make_geometry_point_from_latlon, make_fuzzy_geometry_from_latlon, \
         LOCATION_DESCRIPTION, asiotid, make_statime
 except ImportError:
     from stao.constants import WATER_WELL, HYDROVU_SENSOR, DTW_OBS_PROP, GWL_DS
     from stao.stao import LocationGeoconnexMixin, BQSTAO, BaseSTAO, ObservationMixin, LocationMixin, ThingMixin, \
-        DatastreamMixin
+    DatastreamMixin, SimpleSTAO
     from stao.util import make_geometry_point_from_utm, make_geometry_point_from_latlon, \
         make_fuzzy_geometry_from_latlon, asiotid, make_statime
 
@@ -79,9 +79,12 @@ class PHVWaterLevelsDatastreams(PHV_Site_STAO, DatastreamMixin):
     def _transform(self, request, record):
         payload = self._make_datastream_payload(record, 'gwl', AGENCY)
         payload['properties'] = {}
+        return payload
 
 
-class PHVObservations(BQSTAO, ObservationMixin):
+class PHVObservations(ObservationMixin, BQSTAO):
+    _vocab_tag = 'phv'
+
     _tablename = 'pecos_readings'
     _fields = ['value', 'unitId', 'timestamp',
                'locationId', 'parameterId', 'customParameter', '_airbyte_ab_id']
@@ -100,10 +103,34 @@ class PHVObservations(BQSTAO, ObservationMixin):
     _timestamp_field = 'timestamp'
     _value_field = 'value'
 
+    def _extract_timestamp(self, dt):
+        return dt
+
 
 if __name__ == '__main__':
-    phv = PHVLocations()
+    # phv = PHVLocations()
     # phv = PHVThings()
-    phv.render(None, dry=False)
+
+    # phv = PHVWaterLevelsDatastreams()
+    # ss = SimpleSTAO()
+    # ss.render('sensor', HYDROVU_SENSOR)
+    class DummyRequest:
+        def __init__(self, p):
+            self._p = p
+
+        @property
+        def json(self):
+            return self._p
+
+    phv = PHVObservations()
+    phv.render(None, dry=True)
+    # for i in range(2):
+    #     if i:
+    #         # state = json.loads(ret)
+    #         dr = DummyRequest(state)
+    #     else:
+    #         dr = DummyRequest({})
+    #
+    #     state = phv.render(dr)
 
 # ============= EOF =============================================
