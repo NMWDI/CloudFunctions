@@ -27,7 +27,7 @@ try:
         WELL_LOCATION_DESCRIPTION, WATER_WELL
 except ImportError:
     from stao.stao import BQSTAO, LocationGeoconnexMixin, ObservationMixin
-    from stao.util import make_geometry_point_from_latlon, asiotid, make_statime
+    from stao.util import make_geometry_point_from_latlon, asiotid, make_statime, make_sta_client
     from stao.constants import GWL_DS, DTW_OBS_PROP, MANUAL_SENSOR, PRESSURE_SENSOR, WATER_QUANTITY, ACOUSTIC_SENSOR, \
     WELL_LOCATION_DESCRIPTION, WATER_WELL
 
@@ -56,6 +56,10 @@ class EBIDLocations(LocationGeoconnexMixin, EBID_Site_STAO):
 
         lat = record['latitude_dec']
         lon = record['longitude_dec']
+        #make_sta_client
+        #    self._client = make_sta_client(dry=False,project_id="
+        # REPLACE DEFAULT STA CLIENT OBJECT WITH TEST ENDPOINT BY USING SECRET CREDENTIALS NAMED 'nmwdi_st_dev'
+        self._client = make_sta_client(secret_id="nmwdi_st_dev")
 
         payload = {'name': record['site_id'].upper(),
                    'description': WELL_LOCATION_DESCRIPTION,
