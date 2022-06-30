@@ -104,6 +104,6 @@ class PHVObservations(BQSTAO, ObservationMixin):
 if __name__ == '__main__':
     phv = PHVLocations()
     # phv = PHVThings()
-    phv.render(None, dry=True)
+    phv.render(None, dry=False)
 
 # ============= EOF =============================================

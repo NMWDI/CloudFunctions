@@ -33,7 +33,9 @@ def clean_name(name):
 PHV = {'location': {'latitude': 'latitude',
                     'longitude': 'longitude',
                     'description': {'text': WELL_LOCATION_DESCRIPTION},
-                    'name': {'column': 'name', 'postprocess': clean_name},
+                    'name': {'column': 'name',
+                             # 'postprocess': clean_name
+                             },
                     'properties': {'source_id': 'id',
                                    'hydrovu_description': 'description'}},
 
