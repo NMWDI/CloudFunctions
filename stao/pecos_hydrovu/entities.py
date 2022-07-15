@@ -108,7 +108,7 @@ class PHVObservations(ObservationMixin, BQSTAO):
     def _extract_timestamp(self, dt):
         return dt
 
-    def _value_converter(self, v):
+    def _transform_value(self, v):
         """convert m to ft"""
         return v * 3.281
 

@@ -53,6 +53,7 @@ PHV = {'location': {'latitude': 'latitude',
 
 class VocabMapper:
     def load(self, name):
+        vb = {}
         if name == 'phv':
             vb = PHV
 

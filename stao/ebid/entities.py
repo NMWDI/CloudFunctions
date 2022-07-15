@@ -24,17 +24,19 @@ try:
     from stao import BQSTAO, LocationGeoconnexMixin, ObservationMixin
     from util import make_geometry_point_from_latlon, asiotid, make_statime
     from constants import GWL_DS, DTW_OBS_PROP, MANUAL_SENSOR, PRESSURE_SENSOR, WATER_QUANTITY, ACOUSTIC_SENSOR, \
-        WELL_LOCATION_DESCRIPTION, WATER_WELL
+        WELL_LOCATION_DESCRIPTION, WATER_WELL, STREAM_GAUGE
 except ImportError:
-    from stao.stao import BQSTAO, LocationGeoconnexMixin, ObservationMixin
+    from stao.stao import BQSTAO, LocationGeoconnexMixin, ObservationMixin, SimpleSTAO
     from stao.util import make_geometry_point_from_latlon, asiotid, make_statime
     from stao.constants import GWL_DS, DTW_OBS_PROP, MANUAL_SENSOR, PRESSURE_SENSOR, WATER_QUANTITY, ACOUSTIC_SENSOR, \
-    WELL_LOCATION_DESCRIPTION, WATER_WELL
+        WELL_LOCATION_DESCRIPTION, WATER_WELL, STREAM_GAUGE, ONERAIN_SENSOR
+
+AGENCY = 'EBID'
 
 
 class EBID_Site_STAO(BQSTAO):
-    _fields = ['location', 'client_id', 'elevation', 'system_id', 'or_site_id',
-               'latitude_dec', 'longitude_dec' ]
+    _fields = ['site_id', 'location', 'client_id', 'elevation', 'system_id', 'or_site_id',
+               'latitude_dec', 'longitude_dec']
 
     _dataset = 'ebid'
     _tablename = 'GetSiteMetaData'
@@ -43,21 +45,25 @@ class EBID_Site_STAO(BQSTAO):
     _orderby = 'or_site_id asc'
 
     def _transform_message(self, record):
-        return f"or_site_id={record['or_site_id']}"
+        return f"site_id={record['site_id']} or_site_id={record['or_site_id']}"
+
+    def location_name(self, record):
+        return record['site_id'].upper()
 
 
 class EBIDLocations(LocationGeoconnexMixin, EBID_Site_STAO):
     _entity_tag = 'location'
 
     def _transform(self, request, record):
-        properties = {k: record[k] for k in ('site_id', 'location', 'elevation', 'or_site_id','latitude_dec','longitude_dec' )}
+        properties = {k: record[k] for k in
+                      ('site_id', 'location', 'elevation', 'or_site_id', 'latitude_dec', 'longitude_dec')}
         properties['agency'] = 'EBID'
         properties['source_id'] = record['site_id']
 
         lat = record['latitude_dec']
         lon = record['longitude_dec']
 
-        payload = {'name': record['site_id'].upper(),
+        payload = {'name': self.location_name(record),
                    'description': WELL_LOCATION_DESCRIPTION,
                    'properties': properties,
                    'location': make_geometry_point_from_latlon(lat, lon),
@@ -67,7 +73,154 @@ class EBIDLocations(LocationGeoconnexMixin, EBID_Site_STAO):
         return payload
 
 
-#class NMBGMRThings(NMBGMR_Site_STAO):
+class EBIDThings(EBID_Site_STAO):
+    _entity_tag = 'thing'
+
+    def _transform(self, request, record):
+        name = self.location_name(record)
+
+        location = self._client.get_location(f"name eq '{name}'")
+        if 'Well' in record['location']:
+            payload = {'name': WATER_WELL['name'],
+                       'Locations': [{'@iot.id': location['@iot.id']}],
+                       'description': WATER_WELL['description'],
+                       'properties': {'agency': AGENCY,
+                                      }
+                       }
+        else:
+            payload = {'name': STREAM_GAUGE['name'],
+                       'Locations': [{'@iot.id': location['@iot.id']}],
+                       'description': STREAM_GAUGE['description'],
+                       'properties': {'agency': AGENCY,
+                                      }
+                       }
+        return payload
+
+
+class EBIDDatastreams(EBID_Site_STAO):
+    _entity_tag = 'datastream'
+
+    def _transform(self, request, record):
+        name = self.location_name(record)
+        loc = self._client.get_location(f"name eq '{name}'")
+
+        if 'Well' in record['location']:
+            thing = self._client.get_thing(location=loc['@iot.id'], name=WATER_WELL['name'])
+            if thing:
+                obsprop = next(self._client.get_observed_properties(name=DTW_OBS_PROP['name']))
+                sensor = next(self._client.get_sensors(name=ONERAIN_SENSOR['name']))
+                properties = {}
+                dtwbgs = {'name': GWL_DS['name'],
+                          'description': GWL_DS['description'],
+                          'Sensor': asiotid(sensor),
+                          'ObservedProperty': asiotid(obsprop),
+                          'Thing': asiotid(thing),
+                          'unitOfMeasurement': FOOT,
+                          'observationType': OM_Measurement,
+                          'properties': properties
+                          }
+                return dtwbgs
+
+        else:
+            # non well datastreams not yet supported
+            payload = None
+
+        # payload = {'name': STREAM_GAUGE['name'],
+        #            'Locations': [{'@iot.id': location['@iot.id']}],
+        #            'description': STREAM_GAUGE['description'],
+        #            'properties': {'agency': AGENCY,
+        #                           }
+        #            }
+        return payload
+
+
+class EBIDGWLObservations(ObservationMixin, BQSTAO):
+    _tablename = 'GetSensorData'
+    _fields = ['units', 'site_id', 'data_time',
+               'sensor_id', 'data_value', 'or_site_id', '_airbyte_ab_id']
+    _limit = 5000
+    _where = "sensor_id='97'"
+
+    _dataset = 'ebid'
+    _entity_tag = 'observation'
+
+    _orderby = '_airbyte_ab_id asc'
+    _location_field = 'site_id'
+    _cursor_id = '_airbyte_ab_id'
+    _datastream_name = GWL_DS['name']
+    _thing_name = WATER_WELL['name']
+    _agency = AGENCY
+    _timestamp_field = 'data_time'
+    _value_field = 'data_value'
+
+    def _transform_timestamp(self, dt):
+        dt = datetime.datetime.strptime(dt, '%Y-%m-%d %H:%M:%S')
+        return dt
+
+    def _transform_value(self, v):
+        return v*-1
+
+    def _extract_timestamp(self, dt):
+        return dt
+
+
+class DummyRequest:
+    def __init__(self, p):
+        self._p = p
+
+    @property
+    def json(self):
+        return self._p
+
+
+if __name__ == '__main__':
+    # ss = SimpleSTAO()
+    # ss.render('sensor', ONERAIN_SENSOR)
+
+    # c = EBIDThings()
+    # c = EBIDDatastreams()
+
+    c = EBIDGWLObservations()
+
+    # c.render(None, dry=True)
+    # c.render(None, dry=True)
+    state = None
+    for i in range(1):
+        print(i, '---------------------------', state)
+        if i:
+            # state = json.loads(ret)
+            dr = DummyRequest(state)
+        else:
+            dr = DummyRequest({})
+
+        state = c.render(dr, dry=True)
+
+# c = EBIDLocations()
+# c = NMBGMRAcousticWaterLevelsDatastreams()
+# c = NMBGMRWaterLevelsObservations('pressure_gwl')
+# c._limit = 5
+# for i in range(2):
+#     if i:
+#         # state = json.loads(ret)
+#         dr = DummyRequest({'where': f"OBJECTID>{state['OBJECTID']}"})
+#     else:
+#         dr = DummyRequest({})
+#     state = c.render(dr)
+
+# c = NMBGMRManualWaterLevelsDatastreams()
+# for i in range(2):
+#     if i:
+#         OBJECTID = c.state['OBJECTID']
+#         rr = {'where': f'OBJECTID>{OBJECTID}'}
+#     else:
+#         rr = {}
+#
+#     r = DummyRequest(rr)
+#     c.render(r, dry=True)
+
+
+# ============= EOF =============================================
+# class NMBGMRThings(NMBGMR_Site_STAO):
 #    _entity_tag = 'thing'
 #
 #    def _get_screens(self, pointid):
@@ -103,7 +256,7 @@ class EBIDLocations(LocationGeoconnexMixin, EBID_Site_STAO):
 #        return payload
 #
 #
-#class NMBGMRWaterLevelDatastreams(BQSTAO):
+# class NMBGMRWaterLevelDatastreams(BQSTAO):
 #    # _fields = ['Easting', 'PointID', 'AltDatum', 'Altitude', 'WellID',
 #    #            'Northing', 'OBJECTID', 'SiteNames', 'WellDepth', 'CurrentUseDescription',
 #    #            'StatusDescription', 'FormationZone']
@@ -131,7 +284,7 @@ class EBIDLocations(LocationGeoconnexMixin, EBID_Site_STAO):
 #        return self._bq_query(sql)
 #
 #
-#class NMBGMRManualWaterLevelsDatastreams(NMBGMRWaterLevelDatastreams):
+# class NMBGMRManualWaterLevelsDatastreams(NMBGMRWaterLevelDatastreams):
 #    _tablename = 'nmbgmr_manual_gwl'
 #    _fields = ['OBJECTID', 'PointID',
 #               'MeasuringAgency', 'MeasurementMethod', 'LevelStatus', 'DataSource', 'DataQuality']
@@ -165,7 +318,7 @@ class EBIDLocations(LocationGeoconnexMixin, EBID_Site_STAO):
 #        # return payloads
 #
 #
-#class NMBGMRPressureWaterLevelsDatastreams(NMBGMRWaterLevelDatastreams):
+# class NMBGMRPressureWaterLevelsDatastreams(NMBGMRWaterLevelDatastreams):
 #    _tablename = 'pressure_gwl'
 #    _fields = ['OBJECTID', 'PointID',
 #               'MeasuringAgency', 'MeasurementMethod', 'DataSource', 'DataSource']
@@ -201,7 +354,7 @@ class EBIDLocations(LocationGeoconnexMixin, EBID_Site_STAO):
 #            return dtwbgs
 #
 #
-#class NMBGMRAcousticWaterLevelsDatastreams(NMBGMRWaterLevelDatastreams):
+# class NMBGMRAcousticWaterLevelsDatastreams(NMBGMRWaterLevelDatastreams):
 #    _tablename = 'acoustic_gwl'
 #    _fields = ['OBJECTID', 'PointID',
 #               'MeasuringAgency', 'MeasurementMethod', 'DataSource', 'DataSource']
@@ -237,7 +390,7 @@ class EBIDLocations(LocationGeoconnexMixin, EBID_Site_STAO):
 #            return dtwbgs
 #
 #
-#class NMBGMRWaterLevelsObservations(BQSTAO, ObservationMixin):
+# class NMBGMRWaterLevelsObservations(BQSTAO, ObservationMixin):
 #    _dataset = 'levels'
 #    _entity_tag = 'observation'
 #
@@ -454,38 +607,41 @@ class EBIDLocations(LocationGeoconnexMixin, EBID_Site_STAO):
 #     #
 #     # return previous_max_objectid
 
-class DummyRequest:
-    def __init__(self, p):
-        self._p = p
+# class DummyRequest:
+#     def __init__(self, p):
+#         self._p = p
+#
+#     @property
+#     def json(self):
+#         return self._p
 
-    @property
-    def json(self):
-        return self._p
 
+# if __name__ == '__main__':
+#     c = EBIDThings()
+#     # c = EBIDDatastreams()
+#     c.render(None, dry=True)
 
-if __name__ == '__main__':
+# c = EBIDLocations()
+# c = NMBGMRAcousticWaterLevelsDatastreams()
+# c = NMBGMRWaterLevelsObservations('pressure_gwl')
+# c._limit = 5
+# for i in range(2):
+#     if i:
+#         # state = json.loads(ret)
+#         dr = DummyRequest({'where': f"OBJECTID>{state['OBJECTID']}"})
+#     else:
+#         dr = DummyRequest({})
+#     state = c.render(dr)
 
-    c = EBIDLocations()
-    # c = NMBGMRAcousticWaterLevelsDatastreams()
-    c = NMBGMRWaterLevelsObservations('pressure_gwl')
-    # c._limit = 5
-    for i in range(2):
-        if i:
-            # state = json.loads(ret)
-            dr = DummyRequest({'where': f"OBJECTID>{state['OBJECTID']}"})
-        else:
-            dr = DummyRequest({})
-        state = c.render(dr)
-
-    # c = NMBGMRManualWaterLevelsDatastreams()
-    # for i in range(2):
-    #     if i:
-    #         OBJECTID = c.state['OBJECTID']
-    #         rr = {'where': f'OBJECTID>{OBJECTID}'}
-    #     else:
-    #         rr = {}
-    #
-    #     r = DummyRequest(rr)
-    #     c.render(r, dry=True)
+# c = NMBGMRManualWaterLevelsDatastreams()
+# for i in range(2):
+#     if i:
+#         OBJECTID = c.state['OBJECTID']
+#         rr = {'where': f'OBJECTID>{OBJECTID}'}
+#     else:
+#         rr = {}
+#
+#     r = DummyRequest(rr)
+#     c.render(r, dry=True)
 
 # ============= EOF =============================================

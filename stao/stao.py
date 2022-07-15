@@ -35,8 +35,6 @@ class ObservationMixin:
 
     _entity_tag = 'observation'
 
-    _value_converter = None
-
     # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     #  Must define the following attributes
     # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -57,7 +55,11 @@ class ObservationMixin:
 
     def _location_grouper(self, records):
         def key(r):
-            return int(r[self._location_field])
+            v = r[self._location_field]
+            try:
+                return int(v)
+            except ValueError:
+                return v
 
         return groupby(sorted(records, key=key), key=key)
 
@@ -86,13 +88,25 @@ class ObservationMixin:
             yield {'locationId': g, 'observations': obs,
                    self._cursor_id: maxo}
 
+    def _transform_value(self, v):
+        return v
+
+    def _transform_timestamp(self, dt):
+        dt = datetime.datetime.utcfromtimestamp(dt)
+        dt = dt.replace(tzinfo=pytz.UTC)
+        return dt
+
     def _extract_timestamp(self, dt):
         return dt/1000
 
     def _transform(self, request, record):
 
         locationId = record['locationId']
-        locationId = int(locationId)
+        try:
+            locationId = int(locationId)
+        except ValueError:
+            pass
+
         loc = self._get_location(locationId, record)
         if not loc:
             print(f'******* no location {locationId}')
@@ -102,6 +116,7 @@ class ObservationMixin:
                 try:
                     ds = self._client.get_datastream(name=self._datastream_name, thing=thing['@iot.id'])
                 except StopIteration:
+                    print(f'********* no datastream for location {locationId}')
                     return
 
                 if ds:
@@ -126,17 +141,13 @@ class ObservationMixin:
                         if not dt:
                             print(f'skipping invalid datetime. {dt}')
                             continue
-                        dt = datetime.datetime.utcfromtimestamp(dt)
-                        dt = dt.replace(tzinfo=pytz.UTC)
-
+                        dt = self._transform_timestamp(dt)
                         # if not last_obs or (last_obs and dt > last_obs):
                         t = dt.strftime('%Y-%m-%dT%H:%M:%S.000Z')
                         v = obs[self._value_field]
                         try:
                             v = float(v)
-                            if self._value_converter:
-                                v = self._value_converter(v)
-
+                            v = self._transform_value(v)
                         except (TypeError, ValueError) as e:
                             print(f'skipping. error={e}. v={v}')
 
