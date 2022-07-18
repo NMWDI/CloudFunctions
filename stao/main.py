@@ -211,4 +211,9 @@ def ebid_locations(request):
     stao = EBIDLocations()
     return stao.render(request)
 
+
+def ebid_waterlevels(request):
+    from ebid.entities import EBIDGWLObservations
+    stao = EBIDGWLObservations()
+    return stao.render(request)
 # ============= EOF =============================================
