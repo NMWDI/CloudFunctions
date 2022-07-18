@@ -97,7 +97,7 @@ class ObservationMixin:
         return dt
 
     def _extract_timestamp(self, dt):
-        return dt/1000
+        return dt / 1000
 
     def _transform(self, request, record):
 
@@ -120,19 +120,14 @@ class ObservationMixin:
                     return
 
                 if ds:
-                    # get last observation for this datastream
-                    eobs = self._client.get_observations(ds,
-                                                         # limit=1,
-                                                         # pages=1,
-                                                         verbose=False,
-                                                         orderby='phenomenonTime desc')
-                    # last_obs = None
-                    eobs = list(eobs)
-                    # if eobs:
-                    #     last_obs = make_statime(eobs[0]['phenomenonTime'])
-                    #     last_obs = last_obs.replace(tzinfo=utc)
-
-                    print(f'existing obs={len(eobs)} datastream={ds} ')
+                    # eobs = self._client.get_observations(ds,
+                    #                                      # limit=1,
+                    #                                      # pages=1,
+                    #                                      verbose=False,
+                    #                                      orderby='phenomenonTime desc')
+                    # eobs = list(eobs)
+                    #
+                    # print(f'existing obs={len(eobs)} datastream={ds} ')
                     vs = []
                     components = ['phenomenonTime', 'resultTime', 'result']
                     for obs in record['observations']:
@@ -151,9 +146,11 @@ class ObservationMixin:
                         except (TypeError, ValueError) as e:
                             print(f'skipping. error={e}. v={v}')
 
-                        if observation_exists(eobs, dt, v):
-                            print(f'skipping already exists {t}, {v}')
+                        if self._client.get_observation(t, v):
                             continue
+                        # if observation_exists(eobs, dt, v):
+                        #     print(f'skipping already exists {t}, {v}')
+                        #     continue
                         vs.append((t, t, v))
                     print(vs)
                     if vs:
@@ -444,7 +441,7 @@ class DatastreamMixin:
             return
 
         return self._client.get_thing(location=loc['@iot.id'],
-                                       name=self.toST('thing.name'))
+                                      name=self.toST('thing.name'))
 
 
 class ThingMixin:

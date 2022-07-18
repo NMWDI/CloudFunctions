@@ -138,7 +138,7 @@ class EBIDGWLObservations(ObservationMixin, BQSTAO):
     _tablename = 'GetSensorData'
     _fields = ['units', 'site_id', 'data_time',
                'sensor_id', 'data_value', 'or_site_id', '_airbyte_ab_id']
-    _limit = 5000
+    _limit = 500
     _where = "sensor_id='97'"
 
     _dataset = 'ebid'
@@ -152,6 +152,8 @@ class EBIDGWLObservations(ObservationMixin, BQSTAO):
     _agency = AGENCY
     _timestamp_field = 'data_time'
     _value_field = 'data_value'
+
+    _check_existing = False
 
     def _transform_timestamp(self, dt):
         dt = datetime.datetime.strptime(dt, '%Y-%m-%d %H:%M:%S')
