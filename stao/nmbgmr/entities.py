@@ -35,12 +35,12 @@ except ImportError:
 class NMBGMR_Site_STAO(BQSTAO):
     _fields = ['Easting', 'PointID', 'AltDatum', 'Altitude', 'WellID',
                'Northing', 'OBJECTID', 'SiteNames', 'WellDepth', 'CurrentUseDescription',
-               'StatusDescription', 'FormationZone']
+               'StatusDescription', 'FormationZone', 'projectname']
 
     _dataset = 'locations'
     _tablename = 'nmbgmr_sites'
 
-    _limit = 100
+    _limit = 10000
     _orderby = 'OBJECTID asc'
 
     def _transform_message(self, record):
@@ -54,6 +54,7 @@ class NMBGMRLocations(LocationGeoconnexMixin, NMBGMR_Site_STAO):
         properties = {k: record[k] for k in ('Altitude', 'AltDatum', 'WellID', 'PointID')}
         properties['agency'] = 'NMBGMR'
         properties['source_id'] = record['OBJECTID']
+        properties['project_name'] = record['projectname']
 
         e = record['Easting']
         n = record['Northing']
@@ -467,17 +468,19 @@ class DummyRequest:
 
 if __name__ == '__main__':
 
-    # c = NMBGMRLocations()
+    c = NMBGMRLocations()
+    c.render(None, dry=False)
+
     # c = NMBGMRAcousticWaterLevelsDatastreams()
-    c = NMBGMRWaterLevelsObservations('pressure_gwl')
-    # c._limit = 5
-    for i in range(2):
-        if i:
-            # state = json.loads(ret)
-            dr = DummyRequest({'where': f"OBJECTID>{state['OBJECTID']}"})
-        else:
-            dr = DummyRequest({})
-        state = c.render(dr)
+    # c = NMBGMRWaterLevelsObservations('pressure_gwl')
+    # # c._limit = 5
+    # for i in range(2):
+    #     if i:
+    #         # state = json.loads(ret)
+    #         dr = DummyRequest({'where': f"OBJECTID>{state['OBJECTID']}"})
+    #     else:
+    #         dr = DummyRequest({})
+    #     state = c.render(dr)
 
     # c = NMBGMRManualWaterLevelsDatastreams()
     # for i in range(2):
