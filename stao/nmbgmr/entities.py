@@ -149,8 +149,11 @@ class NMBGMRManualWaterLevelsDatastreams(NMBGMRWaterLevelDatastreams):
         if not loc:
             print(f'------------ failed locating {pointid}')
             return
+        try:
+            thing = self._client.get_thing(location=loc['@iot.id'], name='Water Well')
+        except StopIteration:
+            return
 
-        thing = self._client.get_thing(location=loc['@iot.id'], name='Water Well')
         if thing:
             obsprop = next(self._client.get_observed_properties(name=DTW_OBS_PROP['name']))
             sensor = next(self._client.get_sensors(name=MANUAL_SENSOR['name']))
