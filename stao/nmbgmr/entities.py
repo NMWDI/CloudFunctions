@@ -267,7 +267,12 @@ class NMBGMRWaterLevelsObservations(BQSTAO, ObservationMixin):
         if not loc:
             print(f'******* no location {record["PointID"]}')
         else:
-            thing = self._client.get_thing(name='Water Well', location=loc['@iot.id'])
+            try:
+                thing = self._client.get_thing(name='Water Well', location=loc['@iot.id'])
+            except StopIteration:
+                print(f'******* no thing {record["PointID"]}')
+                return
+
             if thing:
                 try:
                     ds = self._client.get_datastream(name=GWL_DS['name'], thing=thing['@iot.id'])
