@@ -35,7 +35,7 @@ except ImportError:
 class NMBGMR_Site_STAO(BQSTAO):
     _fields = ['Easting', 'PointID', 'AltDatum', 'Altitude', 'WellID',
                'Northing', 'OBJECTID', 'SiteNames', 'WellDepth', 'CurrentUseDescription',
-               'StatusDescription', 'FormationZone', 'projectname']
+               'StatusDescription', 'FormationZone', 'projectname', 'DataSource', 'MeasuringAgency']
 
     _dataset = 'locations'
     _tablename = 'nmbgmr_sites'
@@ -47,6 +47,7 @@ class NMBGMR_Site_STAO(BQSTAO):
         return f"OBJECTID={record['OBJECTID']}"
 
 
+DSMAP = {}
 class NMBGMRLocations(LocationGeoconnexMixin, NMBGMR_Site_STAO):
     _entity_tag = 'location'
 
@@ -153,7 +154,11 @@ class NMBGMRManualWaterLevelsDatastreams(NMBGMRWaterLevelDatastreams):
         if thing:
             obsprop = next(self._client.get_observed_properties(name=DTW_OBS_PROP['name']))
             sensor = next(self._client.get_sensors(name=MANUAL_SENSOR['name']))
-            properties = {}
+            properties = {'MeasuringAgency': record['MeasuringAgency'],
+                          'DataSource': record['DataSource'],
+                          'agency': 'NMBGMR',
+                          'topic': WATER_QUANTITY}
+
             dtwbgs = {'name': GWL_DS['name'],
                       'description': GWL_DS['description'],
                       'Sensor': asiotid(sensor),
@@ -468,8 +473,8 @@ class DummyRequest:
 
 if __name__ == '__main__':
 
-    c = NMBGMRLocations()
-    c.render(None, dry=False)
+    # c = NMBGMRLocations()
+    # c.render(None, dry=False)
 
     # c = NMBGMRAcousticWaterLevelsDatastreams()
     # c = NMBGMRWaterLevelsObservations('pressure_gwl')
@@ -482,15 +487,13 @@ if __name__ == '__main__':
     #         dr = DummyRequest({})
     #     state = c.render(dr)
 
-    # c = NMBGMRManualWaterLevelsDatastreams()
-    # for i in range(2):
-    #     if i:
-    #         OBJECTID = c.state['OBJECTID']
-    #         rr = {'where': f'OBJECTID>{OBJECTID}'}
-    #     else:
-    #         rr = {}
-    #
-    #     r = DummyRequest(rr)
-    #     c.render(r, dry=True)
+    c = NMBGMRManualWaterLevelsDatastreams()
+    for i in range(2):
+        if i:
+            # state = json.loads(ret)
+            dr = DummyRequest(state)
+        else:
+            dr = DummyRequest({})
+        state = c.render(dr, False)
 
 # ============= EOF =============================================
