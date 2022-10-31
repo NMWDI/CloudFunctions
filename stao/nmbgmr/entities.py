@@ -15,26 +15,24 @@
 # ===============================================================================
 import datetime
 import json
+import re
 from itertools import groupby
 
 import jsonschema
 import requests
 from sta.definitions import FOOT, OM_Measurement
-from sta.util import statime
 
 try:
     from stao import BQSTAO, LocationGeoconnexMixin, ObservationMixin
-    from util import make_geometry_point_from_utm, asiotid, make_statime
+    from util import make_geometry_point_from_utm, asiotid, make_statime, make_geometry_point_from_latlon
     from constants import GWL_DS, DTW_OBS_PROP, MANUAL_SENSOR, PRESSURE_SENSOR, WATER_QUANTITY, ACOUSTIC_SENSOR, \
         WELL_LOCATION_DESCRIPTION, WATER_WELL
 except ImportError:
     from stao.stao import BQSTAO, LocationGeoconnexMixin, ObservationMixin
-    from stao.util import make_geometry_point_from_utm, asiotid, make_statime
+    from stao.util import make_geometry_point_from_utm, asiotid, make_statime, make_geometry_point_from_latlon
     from stao.constants import GWL_DS, DTW_OBS_PROP, MANUAL_SENSOR, PRESSURE_SENSOR, WATER_QUANTITY, ACOUSTIC_SENSOR, \
         WELL_LOCATION_DESCRIPTION, WATER_WELL
 
-
-NMBGMR = 'NMBGMR'
 
 class NMBGMR_Site_STAO(BQSTAO):
     _fields = ['Easting', 'PointID', 'AltDatum', 'Altitude', 'WellID',
@@ -51,68 +49,42 @@ class NMBGMR_Site_STAO(BQSTAO):
         return f"OBJECTID={record['OBJECTID']}"
 
 
-LOCATION_SCHEMA = {
-    "$id": "https://vocab.newmexicowaterdata.org/schemas/location",
-    "title": "NMWDI Location Schema",
-    "description": "",
-    "version": "0.0.1",
-    "type": "object",
-    "required": ["name", "description", "properties"],
-    "properties": {
-        "name": {
-            "type": "string",
-            "description": "unique human readable identifier, e.g PointID",
-            "fields": {"NMBGMR": "PointID"}
-
-        },
-        "description": {
-            "type": "string",
-            "description": "description of this location"
-        },
-        "properties": {
-            "type": "object",
-            "description": "a flexible place to associate additional attributes with a location",
-            "required": ["elevation", "elevation_unit", "elevation_datum", "dataprovider"],
-            "properties": {"dataprovider": {"type": "string",
-                                            "description": "agency that measured this data",
-                                            "fields": {"NMBGMR": "<NMBGMR>"},
-                                            "enum": ["OSE", "CABQ", "EBID", "PVACD", "NMBGMR", "OSE-Roswell",
-                                                     "ISC_SEVEN_RIVERS"]},
-                           "elevation": {"type": "number",
-                                         "fields": {"NMBGMR": "Altitude"}},
-                           "elevation_unit": {"type": "string",
-                                              "enum": ["MASL", "FASL"],
-                                              "fields": {"NMBGMR": "<FASL>"}},
-                           "elevation_datum": {"type": "string",
-                                               "fields": {"NMBGMR": "AltDatum"}},
-                           }
-        }
-    }
-}
+UTM_REGEX = re.compile(r'UTM\((?P<easting>\w+), *(?P<northing>\w+), *(?P<zone>[A-Za-z]+|<\d+>)\)')
+LATLON = re.compile(r'LATLON\((?P<latitude>\w+), (?P<longitude>\w+)\)')
 
 
-class NMBGMRLocations(LocationGeoconnexMixin, NMBGMR_Site_STAO):
-    _entity_tag = 'location'
+class SchemaMixin:
+    _schema = None
+    _url = None
+    _field_tag = None
 
-    def _get_location_schema(self):
-        global LOCATION_SCHEMA
-        if LOCATION_SCHEMA is None:
-            url = 'https://raw.githubusercontent.com/NMWDI/VocabService/main/schemas/location.schema.json#'
-            resp = requests.get(url)
-            LOCATION_SCHEMA = resp.json()
-        return LOCATION_SCHEMA
+    def _get_field_name(self, tag):
+        schema = self._get_schema()
+        properties = schema['properties']
+        return properties[tag]['fields'][self._field_tag]
+
+    def _get_schema(self):
+        if self._schema is None:
+            if not self._url:
+                raise NotImplementedError
+
+            resp = requests.get(self.url)
+            self._schema = resp.json()
+        return self._schema
 
     def _assemble_properties(self, record):
-        schema = self._get_location_schema()
+        schema = self._get_schema()
         sprops = schema['properties']['properties']['properties']
 
         properties = {}
         for k, prop in sprops.items():
-            field = prop['fields'][NMBGMR]
-            if field.startswith('<') and field.endswith('>'):
-                properties[k] = field[1:-1]
-            else:
-                properties[k] = record[field]
+            field = prop['fields'][self._field_tag]
+            properties[k] = self._render(record, field, isfield=True)
+
+            # if field.startswith('<') and field.endswith('>'):
+            #     properties[k] = field[1:-1]
+            # else:
+            #     properties[k] = record[field]
 
             # properties = {k: record[k] for k in ('Altitude', 'AltDatum', 'WellID', 'PointID')}
             # properties['agency'] = 'NMBGMR'
@@ -120,34 +92,89 @@ class NMBGMRLocations(LocationGeoconnexMixin, NMBGMR_Site_STAO):
 
         return properties
 
+    def _render(self, record, tag, isfield=False):
+        if isfield:
+            field = tag
+        else:
+            field = self._get_field_name(tag)
+
+        if field.startswith('<') and field.endswith('>'):
+            return field[1:-1]
+        else:
+            return record[field]
+
+
+class NMBGMRMixin(SchemaMixin):
+    _field_tag = 'NMBGMR'
+
+
+class LocationSchemaMixin(NMBGMRMixin):
+    _url = 'https://raw.githubusercontent.com/NMWDI/VocabService/main/schemas/location.schema.json#'
+
     def _assemble_payload(self, record):
-        payload = {}
-        schema = self._get_location_schema()
-        properties = schema['properties']
-        namefield = properties['name']['fields'][NMBGMR]
-        payload['name'] = record[namefield]
+        payload = {'name': self._render(record, 'name'),
+                   'description': self._render(record, 'description')}
+        # schema = self._get_schema()
+        # properties = schema['properties']
+        # name_field = properties['name']['fields'][self._field_tag]
+        # description_field = properties['description']['fields'][self._field_tag]
+
+        # name_field = self._get_field_name('name')
+        # description_field = self._get_field_name('description')
+
+        location_field = self._get_field_name('location')
+        m = UTM_REGEX.match(location_field)
+        if m:
+            e, n, z = m.group('easting'), m.group('northing'), m.group('zone')
+            e, n, z = self._render(record, e, isfield=True), \
+                      self._render(record, n, isfield=True), \
+                      self._render(record, z, isfield=True)
+            payload['location'] = make_geometry_point_from_utm(e, n, z)
+        else:
+            m = LATLON.match(location_field)
+            if m:
+                lat, lon = m.group('latitude'), m.group('longitude')
+                lat = self._render(record, lat, isfield=True), self._render(record, lon, isfield=True)
+                payload['location'] = make_geometry_point_from_latlon(lat, lon)
 
         return payload
 
     def _transform(self, request, record):
         properties = self._assemble_properties(record)
 
-        e = record['Easting']
-        n = record['Northing']
-        z = 13
+        # e = record['Easting']
+        # n = record['Northing']
+        # z = 13
         payload = self._assemble_payload(record)
-
-        payload.update({'name': record['PointID'].upper(),
-                        'description': WELL_LOCATION_DESCRIPTION,
-                        'properties': properties,
-                        'location': make_geometry_point_from_utm(e, n, z),
-                        "encodingType": "application/vnd.geo+json",
-                        })
+        #
+        # payload.update({
+        #     # 'name': record['PointID'].upper(),
+        #     # 'description': WELL_LOCATION_DESCRIPTION,
+        #     'properties': properties,
+        #     # 'location': make_geometry_point_from_utm(e, n, z),
+        #     "encodingType": "application/vnd.geo+json",
+        # })
+        payload['properties'] = properties
+        payload['encodingType'] = "application/vnd.geo+json"
 
         return payload
 
 
-class NMBGMRThings(NMBGMR_Site_STAO):
+class NMBGMRLocations(LocationSchemaMixin, LocationGeoconnexMixin, NMBGMR_Site_STAO):
+    _entity_tag = 'location'
+
+
+class ThingSchemaMixin(NMBGMRMixin):
+    url = 'https://raw.githubusercontent.com/NMWDI/VocabService/main/schemas/groundwaterlevels.thing.schema.json#'
+
+    def _assemble_payload(self, record):
+        payload = {'name': self._render(record, 'name'),
+                   'description': self._render(record, 'description')}
+
+        return payload
+
+
+class NMBGMRThings(ThingSchemaMixin, NMBGMR_Site_STAO):
     _entity_tag = 'thing'
 
     def _get_screens(self, pointid):
@@ -163,22 +190,35 @@ class NMBGMRThings(NMBGMR_Site_STAO):
         return ret
 
     def _transform(self, request, record):
-        name = record['PointID']
+        schema = self._get_schema()
+        name = record[schema['locationID']["fields"][self._field_tag]]
+
         location = self._client.get_location(f"name eq '{name}'")
         screens = self._get_screens(name)
-        payload = {'name': WATER_WELL['name'],
-                   'Locations': [{'@iot.id': location['@iot.id']}],
-                   'description': WATER_WELL['description'],
-                   'properties': {'WellDepth': record['WellDepth'],
-                                  'GeologicFormation': record['FormationZone'],
-                                  'Use': record['CurrentUseDescription'],
-                                  'Status': record['StatusDescription'],
-                                  'Screens': screens,
-                                  'agency': 'NMBGMR',
-                                  'PointID': record['PointID'],
-                                  'WellID': record['WellID'],
-                                  'source_id': record['OBJECTID']}
-                   }
+
+        properties = self._assemble_properties(record)
+
+        properties['screens'] = screens
+
+        payload = self._assemble_payload(record)
+        payload['Locations'] = [{'@iot.id': location['@iot.id']}]
+        payload['properties'] = properties
+
+        # payload = {'name': WATER_WELL['name'],
+        #            'Locations': [{'@iot.id': location['@iot.id']}],
+        #            'description': WATER_WELL['description'],
+        #            # 'properties': {'WellDepth': record['WellDepth'],
+        #            #                'GeologicFormation': record['FormationZone'],
+        #            #                'Use': record['CurrentUseDescription'],
+        #            #                'Status': record['StatusDescription'],
+        #            #                'Screens': screens,
+        #            #                'agency': 'NMBGMR',
+        #            #                'PointID': record['PointID'],
+        #            #                'WellID': record['WellID'],
+        #            #                'source_id': record['OBJECTID']
+        #            #                }
+        #            'properties': properties
+        #            }
 
         return payload
 
@@ -554,16 +594,16 @@ if __name__ == '__main__':
             "elevation_datum": "Foo"
         }
     }
-    schema = {"type": "object",
-              "properties": {
-                  "name": {"type": "string"},
-                  "bel": {"type": "number"},
-                  "properties": {"type": "object",
-                                 "properties": {"elevation": {"type": "number"}},
-                                 "required": ["elevation"]
-                                 }}}
+    s = {"type": "object",
+         "properties": {
+             "name": {"type": "string"},
+             "bel": {"type": "number"},
+             "properties": {"type": "object",
+                            "properties": {"elevation": {"type": "number"}},
+                            "required": ["elevation"]
+                            }}}
 
-    schema = {
+    s = {
         "$id": "https://vocab.newmexicowaterdata.org/schemas/location",
         "title": "NMWDI Location Schema",
         "description": "",
@@ -603,7 +643,7 @@ if __name__ == '__main__':
     #     }
     # }
     # d = {"name" : "Eggs", "price" : "Invalid"}
-    jsonschema.validate(instance=d, schema=schema)
+    jsonschema.validate(instance=d, schema=s)
     # # c = NMBGMRLocations()
     # # c = NMBGMRAcousticWaterLevelsDatastreams()
     # c = NMBGMRWaterLevelsObservations('pressure_gwl')
