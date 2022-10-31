@@ -34,6 +34,8 @@ except ImportError:
         WELL_LOCATION_DESCRIPTION, WATER_WELL
 
 
+NMBGMR = 'NMBGMR'
+
 class NMBGMR_Site_STAO(BQSTAO):
     _fields = ['Easting', 'PointID', 'AltDatum', 'Altitude', 'WellID',
                'Northing', 'OBJECTID', 'SiteNames', 'WellDepth', 'CurrentUseDescription',
@@ -59,7 +61,9 @@ LOCATION_SCHEMA = {
     "properties": {
         "name": {
             "type": "string",
-            "description": "unique human readable identifier, e.g PointID"
+            "description": "unique human readable identifier, e.g PointID",
+            "fields": {"NMBGMR": "PointID"}
+
         },
         "description": {
             "type": "string",
@@ -90,18 +94,21 @@ LOCATION_SCHEMA = {
 class NMBGMRLocations(LocationGeoconnexMixin, NMBGMR_Site_STAO):
     _entity_tag = 'location'
 
-    def _assemble_properties(self, record):
+    def _get_location_schema(self):
         global LOCATION_SCHEMA
         if LOCATION_SCHEMA is None:
             url = 'https://raw.githubusercontent.com/NMWDI/VocabService/main/schemas/location.schema.json#'
             resp = requests.get(url)
             LOCATION_SCHEMA = resp.json()
+        return LOCATION_SCHEMA
 
-        schema = LOCATION_SCHEMA
-        sprops = schema['properties']['properties']
+    def _assemble_properties(self, record):
+        schema = self._get_location_schema()
+        sprops = schema['properties']['properties']['properties']
+
         properties = {}
         for k, prop in sprops.items():
-            field = prop['fields']['NMBGMR']
+            field = prop['fields'][NMBGMR]
             if field.startswith('<') and field.endswith('>'):
                 properties[k] = field[1:-1]
             else:
@@ -113,19 +120,29 @@ class NMBGMRLocations(LocationGeoconnexMixin, NMBGMR_Site_STAO):
 
         return properties
 
+    def _assemble_payload(self, record):
+        payload = {}
+        schema = self._get_location_schema()
+        properties = schema['properties']
+        namefield = properties['name']['fields'][NMBGMR]
+        payload['name'] = record[namefield]
+
+        return payload
+
     def _transform(self, request, record):
         properties = self._assemble_properties(record)
 
         e = record['Easting']
         n = record['Northing']
         z = 13
+        payload = self._assemble_payload(record)
 
-        payload = {'name': record['PointID'].upper(),
-                   'description': WELL_LOCATION_DESCRIPTION,
-                   'properties': properties,
-                   'location': make_geometry_point_from_utm(e, n, z),
-                   "encodingType": "application/vnd.geo+json",
-                   }
+        payload.update({'name': record['PointID'].upper(),
+                        'description': WELL_LOCATION_DESCRIPTION,
+                        'properties': properties,
+                        'location': make_geometry_point_from_utm(e, n, z),
+                        "encodingType": "application/vnd.geo+json",
+                        })
 
         return payload
 
