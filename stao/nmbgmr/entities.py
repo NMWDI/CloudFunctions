@@ -17,6 +17,8 @@ import datetime
 import json
 from itertools import groupby
 
+import jsonschema
+import requests
 from sta.definitions import FOOT, OM_Measurement
 from sta.util import statime
 
@@ -29,7 +31,7 @@ except ImportError:
     from stao.stao import BQSTAO, LocationGeoconnexMixin, ObservationMixin
     from stao.util import make_geometry_point_from_utm, asiotid, make_statime
     from stao.constants import GWL_DS, DTW_OBS_PROP, MANUAL_SENSOR, PRESSURE_SENSOR, WATER_QUANTITY, ACOUSTIC_SENSOR, \
-    WELL_LOCATION_DESCRIPTION, WATER_WELL
+        WELL_LOCATION_DESCRIPTION, WATER_WELL
 
 
 class NMBGMR_Site_STAO(BQSTAO):
@@ -47,13 +49,72 @@ class NMBGMR_Site_STAO(BQSTAO):
         return f"OBJECTID={record['OBJECTID']}"
 
 
+LOCATION_SCHEMA = {
+    "$id": "https://vocab.newmexicowaterdata.org/schemas/location",
+    "title": "NMWDI Location Schema",
+    "description": "",
+    "version": "0.0.1",
+    "type": "object",
+    "required": ["name", "description", "properties"],
+    "properties": {
+        "name": {
+            "type": "string",
+            "description": "unique human readable identifier, e.g PointID"
+        },
+        "description": {
+            "type": "string",
+            "description": "description of this location"
+        },
+        "properties": {
+            "type": "object",
+            "description": "a flexible place to associate additional attributes with a location",
+            "required": ["elevation", "elevation_unit", "elevation_datum", "dataprovider"],
+            "properties": {"dataprovider": {"type": "string",
+                                            "description": "agency that measured this data",
+                                            "fields": {"NMBGMR": "<NMBGMR>"},
+                                            "enum": ["OSE", "CABQ", "EBID", "PVACD", "NMBGMR", "OSE-Roswell",
+                                                     "ISC_SEVEN_RIVERS"]},
+                           "elevation": {"type": "number",
+                                         "fields": {"NMBGMR": "Altitude"}},
+                           "elevation_unit": {"type": "string",
+                                              "enum": ["MASL", "FASL"],
+                                              "fields": {"NMBGMR": "<FASL>"}},
+                           "elevation_datum": {"type": "string",
+                                               "fields": {"NMBGMR": "AltDatum"}},
+                           }
+        }
+    }
+}
+
+
 class NMBGMRLocations(LocationGeoconnexMixin, NMBGMR_Site_STAO):
     _entity_tag = 'location'
 
+    def _assemble_properties(self, record):
+        global LOCATION_SCHEMA
+        if LOCATION_SCHEMA is None:
+            url = 'https://raw.githubusercontent.com/NMWDI/VocabService/main/schemas/location.schema.json#'
+            resp = requests.get(url)
+            LOCATION_SCHEMA = resp.json()
+
+        schema = LOCATION_SCHEMA
+        sprops = schema['properties']['properties']
+        properties = {}
+        for k, prop in sprops.items():
+            field = prop['fields']['NMBGMR']
+            if field.startswith('<') and field.endswith('>'):
+                properties[k] = field[1:-1]
+            else:
+                properties[k] = record[field]
+
+            # properties = {k: record[k] for k in ('Altitude', 'AltDatum', 'WellID', 'PointID')}
+            # properties['agency'] = 'NMBGMR'
+            # properties['source_id'] = record['OBJECTID']
+
+        return properties
+
     def _transform(self, request, record):
-        properties = {k: record[k] for k in ('Altitude', 'AltDatum', 'WellID', 'PointID')}
-        properties['agency'] = 'NMBGMR'
-        properties['source_id'] = record['OBJECTID']
+        properties = self._assemble_properties(record)
 
         e = record['Easting']
         n = record['Northing']
@@ -320,7 +381,6 @@ class NMBGMRWaterLevelsObservations(BQSTAO, ObservationMixin):
                         return payload
 
 
-
 # def make_screens(client, objectid, dataset, site_table_name):
 #     # dataset = Variable.get('bq_locations')
 #     # table_name = Variable.get('nmbgmr_screen_tbl')
@@ -466,28 +526,88 @@ class DummyRequest:
 
 
 if __name__ == '__main__':
+    d = {
+        "name": '10',
+        "description": "faar",
+        "bel": 123,
+        "properties": {
+            "dataprovider": "NMBGMR",
+            "elevation": 100,
+            "elevation_unit": "FASL",
+            "elevation_datum": "Foo"
+        }
+    }
+    schema = {"type": "object",
+              "properties": {
+                  "name": {"type": "string"},
+                  "bel": {"type": "number"},
+                  "properties": {"type": "object",
+                                 "properties": {"elevation": {"type": "number"}},
+                                 "required": ["elevation"]
+                                 }}}
 
-    # c = NMBGMRLocations()
-    # c = NMBGMRAcousticWaterLevelsDatastreams()
-    c = NMBGMRWaterLevelsObservations('pressure_gwl')
-    # c._limit = 5
-    for i in range(2):
-        if i:
-            # state = json.loads(ret)
-            dr = DummyRequest({'where': f"OBJECTID>{state['OBJECTID']}"})
-        else:
-            dr = DummyRequest({})
-        state = c.render(dr)
+    schema = {
+        "$id": "https://vocab.newmexicowaterdata.org/schemas/location",
+        "title": "NMWDI Location Schema",
+        "description": "",
+        "vesrion": "0.0.1",
+        "type": "object",
+        "required": ["name", "description", "properties"],
+        "properties": {
+            "name": {
+                "type": "string",
+                "description": "unique human readable identifier, e.g PointID"
+            },
+            "description": {
+                "type": "string",
+                "description": "description of this location"
+            },
+            "properties": {
+                "type": "object",
+                "description": "a flexible place to associate additional attributes with a location",
+                "properties": {
+                    "dataprovider": {"type": "string",
+                                     "description": "agency that measured this data",
+                                     "enum": ["OSE", "CABQ", "EBID", "PVACD", "NMBGMR", "OSE-Roswell",
+                                              "ISC_SEVEN_RIVERS"]},
+                    "elevation": {"type": "number"},
+                    "elevation_unit": {"type": "string",
+                                       "enum": ["MASL", "FASL"]}},
+                "required": ["elevation", "elevation_unit", "dataprovider"]
+            }
+        }
+    }
 
-    # c = NMBGMRManualWaterLevelsDatastreams()
+    # schema = {
+    #     "type": "object",
+    #     "properties": {
+    #         "price": {"type": "number"},
+    #         "name": {"type": "string"},
+    #     }
+    # }
+    # d = {"name" : "Eggs", "price" : "Invalid"}
+    jsonschema.validate(instance=d, schema=schema)
+    # # c = NMBGMRLocations()
+    # # c = NMBGMRAcousticWaterLevelsDatastreams()
+    # c = NMBGMRWaterLevelsObservations('pressure_gwl')
+    # # c._limit = 5
     # for i in range(2):
     #     if i:
-    #         OBJECTID = c.state['OBJECTID']
-    #         rr = {'where': f'OBJECTID>{OBJECTID}'}
+    #         # state = json.loads(ret)
+    #         dr = DummyRequest({'where': f"OBJECTID>{state['OBJECTID']}"})
     #     else:
-    #         rr = {}
+    #         dr = DummyRequest({})
+    #     state = c.render(dr)
     #
-    #     r = DummyRequest(rr)
-    #     c.render(r, dry=True)
+    # # c = NMBGMRManualWaterLevelsDatastreams()
+    # # for i in range(2):
+    # #     if i:
+    # #         OBJECTID = c.state['OBJECTID']
+    # #         rr = {'where': f'OBJECTID>{OBJECTID}'}
+    # #     else:
+    # #         rr = {}
+    # #
+    # #     r = DummyRequest(rr)
+    # #     c.render(r, dry=True)
 
 # ============= EOF =============================================
