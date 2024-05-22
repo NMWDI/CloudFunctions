@@ -61,7 +61,10 @@ class SchemaMixin:
     def _get_field_name(self, tag):
         schema = self._get_schema()
         properties = schema['properties']
-        return properties[tag]['fields'][self._field_tag]
+        try:
+            return properties[tag]['fields'][self._field_tag]
+        except KeyError:
+            return properties[tag]['fields']['default']
 
     def _get_schema(self):
         if self._schema is None:

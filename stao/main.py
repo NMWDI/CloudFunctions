@@ -29,6 +29,26 @@ except ImportError:
         TOTALIZER_OBSERVED_PROPERTIES, TOTALIZER_SENSOR
     from stao.stao import SimpleSTAO
 
+# ======================== bernco ===========================
+def bernco_locations(request):
+    from bernco.entities import BerncoLocations
+    stao = BerncoLocations()
+    return stao.render(request)
+
+def bernco_things(request):
+    from bernco.entities import BerncoThings
+    stao = BerncoThings()
+    return stao.render(request)
+
+def bernco_waterlevel_datastreams(request):
+    from bernco.entities import BernCoWaterLevelsDatastreams
+    stao = BernCoWaterLevelsDatastreams()
+
+    ss = SimpleSTAO()
+    ss.render('sensor', HYDROVU_SENSOR)
+
+    return stao.render(request)
+
 # ======================== pvacd hydrovu ===========================
 def pecos_hydrovu_locations(request):
     from pecos_hydrovu.entities import PHVLocations

@@ -207,6 +207,7 @@ def make_geometry_point_from_utm(e, n, zone=None, ellps=None, srid=None):
         else:
             if ellps is None:
                 ellps = "WGS84"
+
             p = pyproj.Proj(proj="utm", zone=int(zone), ellps=ellps)
             PROJECTIONS[zone] = p
     elif srid:
