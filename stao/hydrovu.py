@@ -22,7 +22,7 @@ try:
     from constants import WATER_WELL, HYDROVU_SENSOR, DTW_OBS_PROP, GWL_DS
     from stao import LocationGeoconnexMixin, BQSTAO, BaseSTAO, ObservationMixin
     from util import make_geometry_point_from_utm, make_geometry_point_from_latlon, make_fuzzy_geometry_from_latlon, \
-        LOCATION_DESCRIPTION, asiotid, make_statime
+        asiotid, make_statime
 except ImportError:
     from stao.constants import WATER_WELL, HYDROVU_SENSOR, DTW_OBS_PROP, GWL_DS
     from stao.stao import LocationGeoconnexMixin, BQSTAO, BaseSTAO, ObservationMixin, LocationMixin, ThingMixin, \
