@@ -38,7 +38,7 @@ class HydroVu_Site_STAO(BQSTAO):
 
     _fields = ['id', 'name', 'latitude', 'longitude', 'description']
 
-    _dataset = 'locations'
+    _dataset = 'nmwdi'
     _limit = 100
     _orderby = 'id asc'
     _where = "LOWER(name) like '%level%'"
@@ -88,7 +88,7 @@ class HydroVuObservations(BQSTAO, ObservationMixin):
     _limit = 500
     _where = "parameterId=4"
 
-    _dataset = 'levels'
+    _dataset = 'mwdi'
     _entity_tag = 'observation'
 
     _orderby = 'timestamp asc'

@@ -54,7 +54,7 @@ AGENCY = 'PVACD'
 class PHVLocations(HydroVuLocations):
     _entity_tag = 'location'
     _vocab_tag = 'phv'
-    _tablename = 'pecos_locations'
+    _tablename = 'pvacd_locations'
 
     # def _transform(self, request, record):
     #     payload = self._make_location_payload(record)
@@ -74,7 +74,7 @@ class PHVWaterLevelsDatastreams(HydroVuWaterLevelsDatastreams):
     _agency = AGENCY
 
 class PHVObservations(HydroVuObservations):
-    _tablename = 'pecos_readings'
+    _tablename = 'pvacd_readings'
     _agency = AGENCY
 
 # class PHVThings(PHV_Site_STAO, ThingMixin):
