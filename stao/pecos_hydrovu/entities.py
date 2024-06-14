@@ -19,135 +19,106 @@ from sta.definitions import FOOT, OM_Measurement
 
 try:
     from constants import WATER_WELL, HYDROVU_SENSOR, DTW_OBS_PROP, GWL_DS
-    from stao import LocationGeoconnexMixin, BQSTAO, BaseSTAO, ObservationMixin, LocationMixin, \
-        ThingMixin, DatastreamMixin, SimpleSTAO
-    from util import make_geometry_point_from_utm, make_geometry_point_from_latlon, \
-        make_fuzzy_geometry_from_latlon, asiotid, make_statime
+    from stao import LocationGeoconnexMixin, BQSTAO, BaseSTAO, ObservationMixin
+    from util import make_geometry_point_from_utm, make_geometry_point_from_latlon, make_fuzzy_geometry_from_latlon, \
+        LOCATION_DESCRIPTION, asiotid, make_statime
+    from hydrovu import HydroVuLocations, HydroVuThings, HydroVuWaterLevelsDatastreams, HydroVuObservations
 except ImportError:
     from stao.constants import WATER_WELL, HYDROVU_SENSOR, DTW_OBS_PROP, GWL_DS
-    from stao.stao import LocationGeoconnexMixin, BQSTAO, BaseSTAO, ObservationMixin, LocationMixin, \
-        ThingMixin, DatastreamMixin, SimpleSTAO
+    from stao.stao import LocationGeoconnexMixin, BQSTAO, BaseSTAO, ObservationMixin, LocationMixin, ThingMixin, \
+        DatastreamMixin
     from stao.util import make_geometry_point_from_utm, make_geometry_point_from_latlon, \
         make_fuzzy_geometry_from_latlon, asiotid, make_statime
+    from stao.hydrovu import HydroVuLocations, HydroVuThings, HydroVuWaterLevelsDatastreams, HydroVuObservations
+
 
 AGENCY = 'PVACD'
 
 
-class PHV_Site_STAO(BQSTAO):
-    _vocab_tag = 'phv'
-    _fields = ['id', 'name', 'latitude', 'longitude', 'description']
+# class PHV_Site_STAO(BQSTAO):
+#     _vocab_tag = 'phv'
+#     _fields = ['id', 'name', 'latitude', 'longitude', 'description']
+#
+#     _dataset = 'locations'
+#     _tablename = 'pecos_locations'
+#
+#     _limit = 100
+#     _orderby = 'id asc'
+#     _where = "LOWER(name) like '%level%'"
+#
+#     def _transform_message(self, record):
+#         return f"id={record['id']}, name={record['name']}"
 
-    _dataset = 'locations'
-    _tablename = 'pecos_locations'
 
-    _limit = 100
-    _orderby = 'id asc'
-    _where = "LOWER(name) like '%level%'"
-
-    def _transform_message(self, record):
-        return f"id={record['id']}, name={record['name']}"
-
-
-class PHVLocations(LocationGeoconnexMixin, PHV_Site_STAO, LocationMixin):
+# class PHVLocations(LocationGeoconnexMixin, PHV_Site_STAO, LocationMixin):
+class PHVLocations(HydroVuLocations):
     _entity_tag = 'location'
-
-    def _transform(self, request, record):
-        payload = self._make_location_payload(record)
-
-        source_id = self.toST('location.properties.source_id', record)
-        hvd = self.toST('location.properties.hydrovu_description', record)
-
-        payload['properties'] = {'agency': AGENCY,
-                                 'source_id': source_id,
-                                 'hydrovu.description': hvd}
-        return payload
-
-
-class PHVThings(PHV_Site_STAO, ThingMixin):
-    _entity_tag = 'thing'
-
-    def _transform(self, request, record):
-        payload = self._make_thing_payload(record)
-        payload['properties'] = {'agency': AGENCY,
-                                 'source_id': self.toST('thing.properties.source_id', record)}
-
-        return payload
-
-
-class PHVWaterLevelsDatastreams(PHV_Site_STAO, DatastreamMixin):
-    _entity_tag = 'datastream'
-
-    def _transform(self, request, record):
-        payload = self._make_datastream_payload(record, 'gwl', AGENCY)
-        payload['properties'] = {}
-        return payload
-
-
-class PHVObservations(ObservationMixin, BQSTAO):
     _vocab_tag = 'phv'
+    _tablename = 'pvacd_locations'
 
-    _tablename = 'pecos_readings'
-    _fields = ['value', 'unitId', 'timestamp',
-               'locationId', 'parameterId', 'customParameter', '_airbyte_ab_id']
-    _limit = 500
-    _where = "parameterId=4"
+    # def _transform(self, request, record):
+    #     payload = self._make_location_payload(record)
+    #
+    #     source_id = self.toST('location.properties.source_id', record)
+    #     hvd = self.toST('location.properties.hydrovu_description', record)
+    #
+    #     payload['properties'] = {'agency': AGENCY,
+    #                              'source_id': source_id,
+    #                              'hydrovu.description': hvd}
+    #     return payload
 
-    _dataset = 'levels'
-    _entity_tag = 'observation'
-
-    # _orderby = 'timestamp asc'
-    _orderby = '_airbyte_ab_id asc'
-    _location_field = 'locationId'
-    _cursor_id = '_airbyte_ab_id'
-    _datastream_name = GWL_DS['name']
-    _thing_name = WATER_WELL['name']
+class PHVThings(HydroVuThings):
     _agency = AGENCY
-    _timestamp_field = 'timestamp'
-    _value_field = 'value'
 
-    def _extract_timestamp(self, dt):
-        return dt
+class PHVWaterLevelsDatastreams(HydroVuWaterLevelsDatastreams):
+    _agency = AGENCY
 
-    def _transform_value(self, v):
-        """convert m to ft"""
-        return v * 3.281
+class PHVObservations(HydroVuObservations):
+    _tablename = 'pvacd_readings'
+    _agency = AGENCY
+
+# class PHVThings(PHV_Site_STAO, ThingMixin):
+#     _entity_tag = 'thing'
+#
+#     def _transform(self, request, record):
+#         payload = self._make_thing_payload(record)
+#         payload['properties'] = {'agency': AGENCY,
+#                                  'source_id': self.toST('thing.properties.source_id', record)}
+#
+#         return payload
+#
+#
+# class PHVWaterLevelsDatastreams(PHV_Site_STAO, DatastreamMixin):
+#     _entity_tag = 'datastream'
+#
+#     def _transform(self, request, record):
+#         payload = self._make_datastream_payload(record, 'gwl', AGENCY)
+#         payload['properties'] = {}
+#
+#
+# class PHVObservations(BQSTAO, ObservationMixin):
+#     _tablename = 'pecos_readings'
+#     _fields = ['value', 'unitId', 'timestamp',
+#                'locationId', 'parameterId', 'customParameter', '_airbyte_ab_id']
+#     _limit = 500
+#     _where = "parameterId=4"
+#
+#     _dataset = 'levels'
+#     _entity_tag = 'observation'
+#
+#     _orderby = 'timestamp asc'
+#     _location_field = 'locationId'
+#     _cursor_id = '_airbyte_ab_id'
+#     _datastream_name = GWL_DS['name']
+#     _thing_name = WATER_WELL['name']
+#     _agency = AGENCY
+#     _timestamp_field = 'timestamp'
+#     _value_field = 'value'
 
 
 if __name__ == '__main__':
-    # phv = PHVLocations()
+    phv = PHVLocations()
     # phv = PHVThings()
+    phv.render(None, dry=True)
 
-    # phv = PHVWaterLevelsDatastreams()
-    # ss = SimpleSTAO()
-    # ss.render('sensor', HYDROVU_SENSOR)
-    # class DummyRequest:
-    #     def __init__(self, p):
-    #         self._p = p
-    #
-    #     @property
-    #     def json(self):
-    #         return self._p
-    #
-    # phv = PHVObservations()
-    # phv.render(None, dry=False)
-    # state = None
-    # for i in range(2):
-    #     print(i, '---------------------------', state)
-    #     if i:
-    #         # state = json.loads(ret)
-    #         dr = DummyRequest(state)
-    #     else:
-    #         dr = DummyRequest({})
-    #
-    #     state = phv.render(dr)
-    # phv = PHVLocations()
-    #
-    # phv = PHVThings()
-    # phv.render(None, dry=False)
-    #
-    # phv = PHVWaterLevelsDatastreams()
-    # phv.render(None, dry=False)
-    #
-    phv = PHVObservations()
-    phv.render(None, dry=False)
 # ============= EOF =============================================

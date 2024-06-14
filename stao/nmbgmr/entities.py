@@ -15,21 +15,23 @@
 # ===============================================================================
 import datetime
 import json
+import re
 from itertools import groupby
 
+import jsonschema
+import requests
 from sta.definitions import FOOT, OM_Measurement
-from sta.util import statime
 
 try:
     from stao import BQSTAO, LocationGeoconnexMixin, ObservationMixin
-    from util import make_geometry_point_from_utm, asiotid, make_statime
+    from util import make_geometry_point_from_utm, asiotid, make_statime, make_geometry_point_from_latlon
     from constants import GWL_DS, DTW_OBS_PROP, MANUAL_SENSOR, PRESSURE_SENSOR, WATER_QUANTITY, ACOUSTIC_SENSOR, \
         WELL_LOCATION_DESCRIPTION, WATER_WELL
 except ImportError:
     from stao.stao import BQSTAO, LocationGeoconnexMixin, ObservationMixin
-    from stao.util import make_geometry_point_from_utm, asiotid, make_statime
+    from stao.util import make_geometry_point_from_utm, asiotid, make_statime, make_geometry_point_from_latlon
     from stao.constants import GWL_DS, DTW_OBS_PROP, MANUAL_SENSOR, PRESSURE_SENSOR, WATER_QUANTITY, ACOUSTIC_SENSOR, \
-    WELL_LOCATION_DESCRIPTION, WATER_WELL
+        WELL_LOCATION_DESCRIPTION, WATER_WELL
 
 
 class NMBGMR_Site_STAO(BQSTAO):
@@ -40,38 +42,142 @@ class NMBGMR_Site_STAO(BQSTAO):
     _dataset = 'locations'
     _tablename = 'nmbgmr_sites'
 
-    _limit = 10000
+    _limit = 100
     _orderby = 'OBJECTID asc'
 
     def _transform_message(self, record):
         return f"OBJECTID={record['OBJECTID']}"
 
 
-DSMAP = {}
-class NMBGMRLocations(LocationGeoconnexMixin, NMBGMR_Site_STAO):
-    _entity_tag = 'location'
+UTM_REGEX = re.compile(r'UTM\((?P<easting>\w+), *(?P<northing>\w+), *(?P<zone>[A-Za-z]+|<\d+>)\)')
+LATLON = re.compile(r'LATLON\((?P<latitude>\w+), (?P<longitude>\w+)\)')
+
+
+class SchemaMixin:
+    _schema = None
+    _url = None
+    _field_tag = None
+
+    def _get_field_name(self, tag):
+        schema = self._get_schema()
+        properties = schema['properties']
+        try:
+            return properties[tag]['fields'][self._field_tag]
+        except KeyError:
+            return properties[tag]['fields']['default']
+
+    def _get_schema(self):
+        if self._schema is None:
+            if not self._url:
+                raise NotImplementedError
+
+            resp = requests.get(self.url)
+            self._schema = resp.json()
+        return self._schema
+
+    def _assemble_properties(self, record):
+        schema = self._get_schema()
+        sprops = schema['properties']['properties']['properties']
+
+        properties = {}
+        for k, prop in sprops.items():
+            field = prop['fields'][self._field_tag]
+            properties[k] = self._render(record, field, isfield=True)
+
+            # if field.startswith('<') and field.endswith('>'):
+            #     properties[k] = field[1:-1]
+            # else:
+            #     properties[k] = record[field]
+
+            # properties = {k: record[k] for k in ('Altitude', 'AltDatum', 'WellID', 'PointID')}
+            # properties['agency'] = 'NMBGMR'
+            # properties['source_id'] = record['OBJECTID']
+
+        return properties
+
+    def _render(self, record, tag, isfield=False):
+        if isfield:
+            field = tag
+        else:
+            field = self._get_field_name(tag)
+
+        if field.startswith('<') and field.endswith('>'):
+            return field[1:-1]
+        else:
+            return record[field]
+
+
+class NMBGMRMixin(SchemaMixin):
+    _field_tag = 'NMBGMR'
+
+
+class LocationSchemaMixin(NMBGMRMixin):
+    _url = 'https://raw.githubusercontent.com/NMWDI/VocabService/main/schemas/location.schema.json#'
+
+    def _assemble_payload(self, record):
+        payload = {'name': self._render(record, 'name'),
+                   'description': self._render(record, 'description')}
+        # schema = self._get_schema()
+        # properties = schema['properties']
+        # name_field = properties['name']['fields'][self._field_tag]
+        # description_field = properties['description']['fields'][self._field_tag]
+
+        # name_field = self._get_field_name('name')
+        # description_field = self._get_field_name('description')
+
+        location_field = self._get_field_name('location')
+        m = UTM_REGEX.match(location_field)
+        if m:
+            e, n, z = m.group('easting'), m.group('northing'), m.group('zone')
+            e, n, z = self._render(record, e, isfield=True), \
+                      self._render(record, n, isfield=True), \
+                      self._render(record, z, isfield=True)
+            payload['location'] = make_geometry_point_from_utm(e, n, z)
+        else:
+            m = LATLON.match(location_field)
+            if m:
+                lat, lon = m.group('latitude'), m.group('longitude')
+                lat = self._render(record, lat, isfield=True), self._render(record, lon, isfield=True)
+                payload['location'] = make_geometry_point_from_latlon(lat, lon)
+
+        return payload
 
     def _transform(self, request, record):
-        properties = {k: record[k] for k in ('Altitude', 'AltDatum', 'WellID', 'PointID')}
-        properties['agency'] = 'NMBGMR'
-        properties['source_id'] = record['OBJECTID']
-        properties['project_name'] = record['projectname']
+        properties = self._assemble_properties(record)
 
-        e = record['Easting']
-        n = record['Northing']
-        z = 13
-
-        payload = {'name': record['PointID'].upper(),
-                   'description': WELL_LOCATION_DESCRIPTION,
-                   'properties': properties,
-                   'location': make_geometry_point_from_utm(e, n, z),
-                   "encodingType": "application/vnd.geo+json",
-                   }
+        # e = record['Easting']
+        # n = record['Northing']
+        # z = 13
+        payload = self._assemble_payload(record)
+        #
+        # payload.update({
+        #     # 'name': record['PointID'].upper(),
+        #     # 'description': WELL_LOCATION_DESCRIPTION,
+        #     'properties': properties,
+        #     # 'location': make_geometry_point_from_utm(e, n, z),
+        #     "encodingType": "application/vnd.geo+json",
+        # })
+        payload['properties'] = properties
+        payload['encodingType'] = "application/vnd.geo+json"
 
         return payload
 
 
-class NMBGMRThings(NMBGMR_Site_STAO):
+class NMBGMRLocations(LocationSchemaMixin, LocationGeoconnexMixin, NMBGMR_Site_STAO):
+    _entity_tag = 'location'
+
+
+class ThingSchemaMixin(NMBGMRMixin):
+    url = 'https://raw.githubusercontent.com/NMWDI/VocabService/main/schemas/groundwaterlevels.thing.schema.json#'
+
+    def _assemble_payload(self, record):
+        payload = {'name': self._render(record, 'name'),
+                   'description': self._render(record, 'description')}
+
+        return payload
+
+
+class NMBGMRThings(ThingSchemaMixin, NMBGMR_Site_STAO):
     _entity_tag = 'thing'
 
     def _get_screens(self, pointid):
@@ -87,22 +193,35 @@ class NMBGMRThings(NMBGMR_Site_STAO):
         return ret
 
     def _transform(self, request, record):
-        name = record['PointID']
+        schema = self._get_schema()
+        name = record[schema['locationID']["fields"][self._field_tag]]
+
         location = self._client.get_location(f"name eq '{name}'")
         screens = self._get_screens(name)
-        payload = {'name': WATER_WELL['name'],
-                   'Locations': [{'@iot.id': location['@iot.id']}],
-                   'description': WATER_WELL['description'],
-                   'properties': {'WellDepth': record['WellDepth'],
-                                  'GeologicFormation': record['FormationZone'],
-                                  'Use': record['CurrentUseDescription'],
-                                  'Status': record['StatusDescription'],
-                                  'Screens': screens,
-                                  'agency': 'NMBGMR',
-                                  'PointID': record['PointID'],
-                                  'WellID': record['WellID'],
-                                  'source_id': record['OBJECTID']}
-                   }
+
+        properties = self._assemble_properties(record)
+
+        properties['screens'] = screens
+
+        payload = self._assemble_payload(record)
+        payload['Locations'] = [{'@iot.id': location['@iot.id']}]
+        payload['properties'] = properties
+
+        # payload = {'name': WATER_WELL['name'],
+        #            'Locations': [{'@iot.id': location['@iot.id']}],
+        #            'description': WATER_WELL['description'],
+        #            # 'properties': {'WellDepth': record['WellDepth'],
+        #            #                'GeologicFormation': record['FormationZone'],
+        #            #                'Use': record['CurrentUseDescription'],
+        #            #                'Status': record['StatusDescription'],
+        #            #                'Screens': screens,
+        #            #                'agency': 'NMBGMR',
+        #            #                'PointID': record['PointID'],
+        #            #                'WellID': record['WellID'],
+        #            #                'source_id': record['OBJECTID']
+        #            #                }
+        #            'properties': properties
+        #            }
 
         return payload
 
@@ -192,7 +311,10 @@ class NMBGMRPressureWaterLevelsDatastreams(NMBGMRWaterLevelDatastreams):
         if thing:
             obsprop = next(self._client.get_observed_properties(name=DTW_OBS_PROP['name']))
             sensor = next(self._client.get_sensors(name=PRESSURE_SENSOR['name']))
-            properties = {'topic': WATER_QUANTITY}
+            properties = {'MeasuringAgency': record['MeasuringAgency'],
+                          'DataSource': record['DataSource'],
+                          'agency': 'NMBGMR',
+                          'topic': WATER_QUANTITY}
 
             dtwbgs = {'name': GWL_DS['name'],
                       'description': GWL_DS['description'],
@@ -225,7 +347,10 @@ class NMBGMRAcousticWaterLevelsDatastreams(NMBGMRWaterLevelDatastreams):
         if thing:
             obsprop = next(self._client.get_observed_properties(name=DTW_OBS_PROP['name']))
             sensor = next(self._client.get_sensors(name=ACOUSTIC_SENSOR['name']))
-            properties = {'topic': WATER_QUANTITY}
+            properties = {'MeasuringAgency': record['MeasuringAgency'],
+                          'DataSource': record['DataSource'],
+                          'agency': 'NMBGMR',
+                          'topic': WATER_QUANTITY}
 
             dtwbgs = {'name': GWL_DS['name'],
                       'description': GWL_DS['description'],
@@ -244,7 +369,7 @@ class NMBGMRWaterLevelsObservations(BQSTAO, ObservationMixin):
     _entity_tag = 'observation'
 
     _fields = ['OBJECTID', 'PointID',
-               'MeasuringAgency', 'MeasurementMethod', 'DataSource',
+               'MeasuringAgency', 'MeasurementMethod', 'DataSource', 'DataSource',
                'DateTimeMeasured', 'DepthToWaterBGS']
     _limit = 500
     _orderby = 'OBJECTID asc'
@@ -325,7 +450,6 @@ class NMBGMRWaterLevelsObservations(BQSTAO, ObservationMixin):
                                    'components': components}
                         print('------------- payload', payload)
                         return payload
-
 
 
 # def make_screens(client, objectid, dataset, site_table_name):
@@ -473,11 +597,69 @@ class DummyRequest:
 
 
 if __name__ == '__main__':
+    d = {
+        "name": '10',
+        "description": "faar",
+        "bel": 123,
+        "properties": {
+            "dataprovider": "NMBGMR",
+            "elevation": 100,
+            "elevation_unit": "FASL",
+            "elevation_datum": "Foo"
+        }
+    }
+    s = {"type": "object",
+         "properties": {
+             "name": {"type": "string"},
+             "bel": {"type": "number"},
+             "properties": {"type": "object",
+                            "properties": {"elevation": {"type": "number"}},
+                            "required": ["elevation"]
+                            }}}
 
-    # c = NMBGMRLocations()
-    # c.render(None, dry=False)
+    s = {
+        "$id": "https://vocab.newmexicowaterdata.org/schemas/location",
+        "title": "NMWDI Location Schema",
+        "description": "",
+        "vesrion": "0.0.1",
+        "type": "object",
+        "required": ["name", "description", "properties"],
+        "properties": {
+            "name": {
+                "type": "string",
+                "description": "unique human readable identifier, e.g PointID"
+            },
+            "description": {
+                "type": "string",
+                "description": "description of this location"
+            },
+            "properties": {
+                "type": "object",
+                "description": "a flexible place to associate additional attributes with a location",
+                "properties": {
+                    "dataprovider": {"type": "string",
+                                     "description": "agency that measured this data",
+                                     "enum": ["OSE", "CABQ", "EBID", "PVACD", "NMBGMR", "OSE-Roswell",
+                                              "ISC_SEVEN_RIVERS"]},
+                    "elevation": {"type": "number"},
+                    "elevation_unit": {"type": "string",
+                                       "enum": ["MASL", "FASL"]}},
+                "required": ["elevation", "elevation_unit", "dataprovider"]
+            }
+        }
+    }
 
-    # c = NMBGMRAcousticWaterLevelsDatastreams()
+    # schema = {
+    #     "type": "object",
+    #     "properties": {
+    #         "price": {"type": "number"},
+    #         "name": {"type": "string"},
+    #     }
+    # }
+    # d = {"name" : "Eggs", "price" : "Invalid"}
+    jsonschema.validate(instance=d, schema=s)
+    # # c = NMBGMRLocations()
+    # # c = NMBGMRAcousticWaterLevelsDatastreams()
     # c = NMBGMRWaterLevelsObservations('pressure_gwl')
     # # c._limit = 5
     # for i in range(2):
@@ -487,18 +669,16 @@ if __name__ == '__main__':
     #     else:
     #         dr = DummyRequest({})
     #     state = c.render(dr)
-
-    # c = NMBGMRManualWaterLevelsDatastreams()
-    # state = c.render(None, False)
-
-    c = NMBGMRWaterLevelsObservations('nmbgmr_manual_gwl')
-    c.render(None, False)
-    # for i in range(2):
-    #     if i:
-    #         # state = json.loads(ret)
-    #         dr = DummyRequest(state)
-    #     else:
-    #         dr = DummyRequest({})
-    #     state = c.render(dr, False)
+    #
+    # # c = NMBGMRManualWaterLevelsDatastreams()
+    # # for i in range(2):
+    # #     if i:
+    # #         OBJECTID = c.state['OBJECTID']
+    # #         rr = {'where': f'OBJECTID>{OBJECTID}'}
+    # #     else:
+    # #         rr = {}
+    # #
+    # #     r = DummyRequest(rr)
+    # #     c.render(r, dry=True)
 
 # ============= EOF =============================================
