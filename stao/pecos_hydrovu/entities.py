@@ -53,6 +53,7 @@ class PHVLocations(HydroVuLocations):
     _entity_tag = 'location'
     _vocab_tag = 'phv'
     _tablename = 'pvacd_locations'
+    _agency = AGENCY
 
     # def _transform(self, request, record):
     #     payload = self._make_location_payload(record)
