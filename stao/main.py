@@ -55,7 +55,16 @@ def pecos_hydrovu_locations(request):
     from pecos_hydrovu.entities import PHVLocations
     print('imported PHVLocations', PHVLocations)
     stao = PHVLocations()
-    resp =  stao.render(request)
+    print('created PHVLocations', stao)
+    try:
+        resp =  stao.render(request)
+    except BaseException as e:
+        import traceback
+
+        exc = traceback.format_exc()
+        print('error', exc)
+        resp = {'error': str(e)}
+
     print('response', resp)
     return resp
 
