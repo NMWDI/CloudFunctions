@@ -84,7 +84,7 @@ class HydroVuWaterLevelsDatastreams(HydroVu_Site_STAO, DatastreamMixin):
         return payload
 
 
-class HydroVuObservations(BQSTAO, ObservationMixin):
+class HydroVuObservations(ObservationMixin, BQSTAO):
     # _tablename = 'bernco_readings'
     _fields = ['value', 'unitId', 'timestamp',
                'locationId', 'parameterId', 'customParameter', '_airbyte_raw_id']
