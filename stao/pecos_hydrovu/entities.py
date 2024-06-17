@@ -19,7 +19,8 @@ from sta.definitions import FOOT, OM_Measurement
 
 try:
     from stao import LocationGeoconnexMixin, BQSTAO, BaseSTAO, ObservationMixin
-    from util import make_geometry_point_from_utm, make_geometry_point_from_latlon, make_fuzzy_geometry_from_latlon, asiotid, make_statime
+    from util import make_geometry_point_from_utm, make_geometry_point_from_latlon, make_fuzzy_geometry_from_latlon, \
+        asiotid, make_statime
     from hydrovu import HydroVuLocations, HydroVuThings, HydroVuWaterLevelsDatastreams, HydroVuObservations
 except ImportError as e:
     print('import error', e)
@@ -28,7 +29,6 @@ except ImportError as e:
     from stao.util import make_geometry_point_from_utm, make_geometry_point_from_latlon, \
         make_fuzzy_geometry_from_latlon, asiotid, make_statime
     from stao.hydrovu import HydroVuLocations, HydroVuThings, HydroVuWaterLevelsDatastreams, HydroVuObservations
-
 
 AGENCY = 'PVACD'
 
@@ -65,6 +65,7 @@ class PHVLocations(HydroVuLocations):
     #                              'hydrovu.description': hvd}
     #     return payload
 
+
 class PHVThings(HydroVuThings):
     _vocab_tag = 'phv'
     _tablename = 'pvacd_locations'
@@ -81,6 +82,7 @@ class PHVObservations(HydroVuObservations):
     _vocab_tag = 'phv'
     _tablename = 'pvacd_readings'
     _agency = AGENCY
+
 
 # class PHVThings(PHV_Site_STAO, ThingMixin):
 #     _entity_tag = 'thing'

@@ -393,7 +393,8 @@ class BQSTAO(BaseSTAO):
         client = bigquery.Client()
         print(f'BQ Query {sql}')
         job = client.query(sql, **kw)
-        return job.result()
+        # return job.result()
+        return dict(job)
 
     def _get_bq_items(self, fields, dataset, tablename, where=None):
         fs = ','.join(fields)
