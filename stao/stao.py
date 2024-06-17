@@ -293,6 +293,7 @@ class BaseSTAO(STAO):
         for i, record in enumerate(records):
             print(f'transform record {i} {self._transform_message(record)}')
             payloads = self._transform(request, record)
+            print('payloads', payloads)
             if payloads:
                 if not isinstance(payloads, (tuple, list)):
                     payloads = (payloads,)
@@ -318,7 +319,7 @@ class BaseSTAO(STAO):
         :param dry:
         :return: returns the pysta object representing the ST entity added to the server
         """
-
+        print('loading record', payload, dry)
         clt = self._client
 
         if hasattr(self, '_get_load_function_name'):
