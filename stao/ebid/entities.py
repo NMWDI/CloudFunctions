@@ -137,16 +137,16 @@ class EBIDDatastreams(EBID_Site_STAO):
 class EBIDGWLObservations(ObservationMixin, BQSTAO):
     _tablename = 'GetSensorData'
     _fields = ['units', 'site_id', 'data_time',
-               'sensor_id', 'data_value', 'or_site_id', '_airbyte_ab_id']
+               'sensor_id', 'data_value', 'or_site_id', '_airbyte_raw_id']
     _limit = 500
     _where = "sensor_id='97'"
 
     _dataset = 'ebid'
     _entity_tag = 'observation'
 
-    _orderby = '_airbyte_ab_id asc'
+    _orderby = '_airbyte_raw_id asc'
     _location_field = 'site_id'
-    _cursor_id = '_airbyte_ab_id'
+    _cursor_id = '_airbyte_raw_id'
     _datastream_name = GWL_DS['name']
     _thing_name = WATER_WELL['name']
     _agency = AGENCY
