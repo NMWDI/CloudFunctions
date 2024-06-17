@@ -100,7 +100,7 @@ class ObservationMixin:
         return dt / 1000
 
     def _transform(self, request, record):
-
+        print('traceasdf', record)
         locationId = record['locationId']
         try:
             locationId = int(locationId)
@@ -112,6 +112,8 @@ class ObservationMixin:
             print(f'******* no location {locationId}')
         else:
             thing = self._client.get_thing(name=self._thing_name, location=loc['@iot.id'])
+            print(f'tryinga {thing} {self._thing_name} {loc["@iot.id"]}')
+
             if thing:
                 try:
                     ds = self._client.get_datastream(name=self._datastream_name, thing=thing['@iot.id'])
