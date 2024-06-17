@@ -433,7 +433,8 @@ class DatastreamMixin:
             return dtwbgs
 
     def _get_thing(self, record, agency):
-        name = self.toST('location.name', record)
+        print('get thing', record)
+        name = self.toST('Location.name', record)
         q = f"name eq '{name}' and properties/agency eq '{agency}'"
         loc = self._client.get_location(query=q)
         if not loc:
