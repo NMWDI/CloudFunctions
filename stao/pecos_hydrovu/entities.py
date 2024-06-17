@@ -72,11 +72,13 @@ class PHVThings(HydroVuThings):
 
 
 class PHVWaterLevelsDatastreams(HydroVuWaterLevelsDatastreams):
+    _vocab_tag = 'phv'
     _agency = AGENCY
     _tablename = 'pvacd_locations'
 
 
 class PHVObservations(HydroVuObservations):
+    _vocab_tag = 'phv'
     _tablename = 'pvacd_readings'
     _agency = AGENCY
 

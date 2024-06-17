@@ -81,6 +81,7 @@ class HydroVuWaterLevelsDatastreams(HydroVu_Site_STAO, DatastreamMixin):
     def _transform(self, request, record):
         payload = self._make_datastream_payload(record, 'gwl', self._agency)
         payload['properties'] = {}
+        return payload
 
 
 class HydroVuObservations(BQSTAO, ObservationMixin):
