@@ -50,7 +50,6 @@ AGENCY = 'PVACD'
 
 # class PHVLocations(LocationGeoconnexMixin, PHV_Site_STAO, LocationMixin):
 class PHVLocations(HydroVuLocations):
-    _entity_tag = 'location'
     _vocab_tag = 'phv'
     _tablename = 'pvacd_locations'
     _agency = AGENCY
@@ -67,10 +66,15 @@ class PHVLocations(HydroVuLocations):
     #     return payload
 
 class PHVThings(HydroVuThings):
+    _vocab_tag = 'phv'
+    _tablename = 'pvacd_locations'
     _agency = AGENCY
+
 
 class PHVWaterLevelsDatastreams(HydroVuWaterLevelsDatastreams):
     _agency = AGENCY
+    _tablename = 'pvacd_locations'
+
 
 class PHVObservations(HydroVuObservations):
     _tablename = 'pvacd_readings'
