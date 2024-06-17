@@ -53,6 +53,7 @@ def bernco_waterlevel_datastreams(request):
 def pecos_hydrovu_locations(request):
     print('received request', request)
     from pecos_hydrovu.entities import PHVLocations
+    print('imported PHVLocations', PHVLocations)
     stao = PHVLocations()
     resp =  stao.render(request)
     print('response', resp)
