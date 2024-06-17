@@ -91,7 +91,7 @@ class HydroVuObservations(BQSTAO, ObservationMixin):
     _limit = 500
     _where = "parameterId=4"
 
-    _dataset = 'mwdi'
+    _dataset = 'nmwdi'
     _entity_tag = 'observation'
 
     _orderby = 'timestamp asc'
