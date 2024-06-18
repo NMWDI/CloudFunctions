@@ -122,14 +122,15 @@ class ObservationMixin:
                     return
 
                 if ds:
-                    # eobs = self._client.get_observations(ds,
-                    #                                      # limit=1,
-                    #                                      # pages=1,
-                    #                                      verbose=False,
-                    #                                      orderby='phenomenonTime desc')
-                    # eobs = list(eobs)
-                    #
-                    # print(f'existing obs={len(eobs)} datastream={ds} ')
+                    eobs = self._client.get_observations(ds,
+                                                         # limit=1,
+                                                         # pages=1,
+                                                         verbose=False,
+                                                         orderby='phenomenonTime desc')
+                    eobs = list(eobs)
+
+                    print(f'existing obs={len(eobs)} datastream={ds} ')
+
                     vs = []
                     components = ['phenomenonTime', 'resultTime', 'result']
                     for obs in record['observations']:
@@ -148,13 +149,15 @@ class ObservationMixin:
                         except (TypeError, ValueError) as e:
                             print(f'skipping. error={e}. v={v}')
 
-                        if self._client.get_observation(t, v):
-                            print(f'skipping already exists {t}, {v}')
-                            continue
-                        # if observation_exists(eobs, dt, v):
+                        # if self._client.get_observation(t, v):
+                        #     print(f'skipping already exists {t}, {v}')
                         #     continue
+                        if observation_exists(eobs, dt, v):
+                            print(f'assuming already exists {t}, {v}')
+                            continue
+
                         vs.append((t, t, v))
-                    print(vs)
+
                     if vs:
                         payload = {'Datastream': asiotid(ds),
                                    'observations': vs,
@@ -375,7 +378,8 @@ class BQSTAO(BaseSTAO):
                     if obj is not None:
                         #Fri, 14 Jun 2024 01:04:51 GMT
                         #%a, %d %b %Y %H:%M:%S %Z
-                        where = f"{self._cursor_id}>PARSE_TIMESTAMP('%a, %d %b %Y %H:%M:%S %Z', '{obj}')"
+                        # where = f"{self._cursor_id}>PARSE_TIMESTAMP('%a, %d %b %Y %H:%M:%S %Z', '{obj}')"
+                        where = f"{self._cursor_id}>{obj}"
             except (ValueError, AttributeError, TypeError) as e:
                 print('error b {}'.format(e))
                 where = None
