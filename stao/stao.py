@@ -69,7 +69,7 @@ class ObservationMixin:
 
         yield a dictionary of the following keys, "locationId", "observations", self._cursor_id
 
-        e.g. {"locationId": 151, "observations": [...], "_airbyte_raw_id": 7eff-... }
+        e.g. {"locationId": 151, "observations": [...], "_airbyte_extracted_at": 7eff-... }
 
         :param records:
         :return:

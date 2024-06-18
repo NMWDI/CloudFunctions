@@ -185,16 +185,16 @@ class ISCSevenRiversWaterLevels(BQSTAO, ObservationMixin):
     _tablename = 'isc_water_levels'
     _fields = ['dry', 'invalid', 'comments',
                'monitoring_point_id', 'dateTime', 'depthToWaterFeet',
-               '_airbyte_raw_id']
+               '_airbyte_extracted_at']
     _limit = 500
 
     _dataset = 'levels'
     _entity_tag = 'observation'
 
-    _orderby = '_airbyte_raw_id asc'
+    _orderby = '_airbyte_extracted_at asc'
     _timestamp_field = 'dateTime'
     _value_field = 'depthToWaterFeet'
-    _cursor_id = '_airbyte_raw_id'
+    _cursor_id = '_airbyte_extracted_at'
     _location_field = 'monitoring_point_id'
     _agency = AGENCY
     _thing_name = WATER_WELL['name']

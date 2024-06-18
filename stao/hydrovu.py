@@ -87,7 +87,7 @@ class HydroVuWaterLevelsDatastreams(HydroVu_Site_STAO, DatastreamMixin):
 class HydroVuObservations(ObservationMixin, BQSTAO):
     # _tablename = 'bernco_readings'
     _fields = ['value', 'unitId', 'timestamp',
-               'locationId', 'parameterId', 'customParameter', '_airbyte_raw_id']
+               'locationId', 'parameterId', 'customParameter', '_airbyte_extracted_at']
     _limit = 500
     _where = "parameterId=4"
 
@@ -96,7 +96,7 @@ class HydroVuObservations(ObservationMixin, BQSTAO):
 
     _orderby = 'timestamp asc'
     _location_field = 'locationId'
-    _cursor_id = '_airbyte_raw_id'
+    _cursor_id = '_airbyte_extracted_at'
     _datastream_name = GWL_DS['name']
     _thing_name = WATER_WELL['name']
 

@@ -106,7 +106,7 @@ class PHVObservations(HydroVuObservations):
 # class PHVObservations(BQSTAO, ObservationMixin):
 #     _tablename = 'pecos_readings'
 #     _fields = ['value', 'unitId', 'timestamp',
-#                'locationId', 'parameterId', 'customParameter', '_airbyte_raw_id']
+#                'locationId', 'parameterId', 'customParameter', '_airbyte_extracted_at']
 #     _limit = 500
 #     _where = "parameterId=4"
 #
@@ -115,7 +115,7 @@ class PHVObservations(HydroVuObservations):
 #
 #     _orderby = 'timestamp asc'
 #     _location_field = 'locationId'
-#     _cursor_id = '_airbyte_raw_id'
+#     _cursor_id = '_airbyte_extracted_at'
 #     _datastream_name = GWL_DS['name']
 #     _thing_name = WATER_WELL['name']
 #     _agency = AGENCY
