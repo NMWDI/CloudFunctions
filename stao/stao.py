@@ -373,7 +373,7 @@ class BQSTAO(BaseSTAO):
                 else:
                     obj = request.json.get(self._cursor_id)
                     if obj is not None:
-                        where = f"{self._cursor_id}>'{obj}'"
+                        where = f"{self._cursor_id}>{obj}"
             except (ValueError, AttributeError, TypeError) as e:
                 print('error b {}'.format(e))
                 where = None
