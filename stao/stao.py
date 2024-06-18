@@ -373,7 +373,9 @@ class BQSTAO(BaseSTAO):
                 else:
                     obj = request.json.get(self._cursor_id)
                     if obj is not None:
-                        where = f"{self._cursor_id}>{obj}"
+                        #Fri, 14 Jun 2024 01:04:51 GMT
+                        #%a, %d %b %Y %H:%M:%S %Z
+                        where = f"{self._cursor_id}>PARSE_TIMESTAMP('%a, %d %b %Y %H:%M:%S %Z', '{obj}')"
             except (ValueError, AttributeError, TypeError) as e:
                 print('error b {}'.format(e))
                 where = None
