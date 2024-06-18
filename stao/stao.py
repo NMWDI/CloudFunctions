@@ -149,9 +149,9 @@ class ObservationMixin:
                             print(f'skipping. error={e}. v={v}')
 
                         if self._client.get_observation(t, v):
+                            print(f'skipping already exists {t}, {v}')
                             continue
                         # if observation_exists(eobs, dt, v):
-                        #     print(f'skipping already exists {t}, {v}')
                         #     continue
                         vs.append((t, t, v))
                     print(vs)
