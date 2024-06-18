@@ -94,7 +94,7 @@ class HydroVuObservations(ObservationMixin, BQSTAO):
     _dataset = 'nmwdi'
     _entity_tag = 'observation'
 
-    _orderby = 'timestamp asc'
+    _orderby = '_airbyte_extracted_at asc'
     _location_field = 'locationId'
     _cursor_id = '_airbyte_extracted_at'
     _datastream_name = GWL_DS['name']
@@ -102,4 +102,7 @@ class HydroVuObservations(ObservationMixin, BQSTAO):
 
     _timestamp_field = 'timestamp'
     _value_field = 'value'
+
+    def _extract_timestamp(self, dt):
+        return dt
 # ============= EOF =============================================
