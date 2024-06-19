@@ -333,11 +333,12 @@ class BaseSTAO(STAO):
             # state = {self._cursor_id: record.get(self._cursor_id),
         state = {self._cursor_id: self._get_latest_cursor(records),
                  'limit': self._limit,
+                 'counter': counter+1
                  }
 
         print('new state', state)
         self.state = state
-        self.state['counter'] = counter + 1
+        # self.state['counter'] = counter + 1
         return self.state
 
     def _get_cursor(self, record):

@@ -52,19 +52,24 @@ AGENCY = 'BernCo'
 
 class BernCoLocations(HydroVuLocations):
     _agency = AGENCY
-    _vocab_tag = 'bernco'
+    _vocab_tag = 'phv'
     _tablename = 'bernco_locations'
 
 
 class BernCoThings(HydroVuThings):
+    _vocab_tag = 'phv'
     _agency = AGENCY
+    _tablename = 'bernco_locations'
 
 
 class BernCoWaterLevelsDatastreams(HydroVuWaterLevelsDatastreams):
+    _vocab_tag = 'phv'
     _agency = AGENCY
+    _tablename = 'bernco_locations'
 
 
 class BernCoObservations(HydroVuObservations):
+    _vocab_tag = 'phv'
     _tablename = 'bernco_readings'
     _agency = AGENCY
 
