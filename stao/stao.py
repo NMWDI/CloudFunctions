@@ -132,6 +132,7 @@ class ObservationMixin:
                     print(f'existing obs={len(eobs)} datastream={ds} ')
 
                     vs = []
+                    duplicates = []
                     components = ['phenomenonTime', 'resultTime', 'result']
                     for obs in record['observations']:
                         dt = obs[self._timestamp_field]
@@ -153,10 +154,15 @@ class ObservationMixin:
                         #     print(f'skipping already exists {t}, {v}')
                         #     continue
                         if observation_exists(eobs, dt, v):
-                            print(f'assuming already exists {t}, {v}')
+                            duplicates.append((t, v))
+                            # print(f'assuming already exists {t}, {v}')
                             continue
 
                         vs.append((t, t, v))
+
+                    if duplicates:
+                        print(f'found {len(duplicates)} duplicates')
+                        print(duplicates)
 
                     if vs:
                         payload = {'Datastream': asiotid(ds),
