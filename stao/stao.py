@@ -163,8 +163,8 @@ class ObservationMixin:
                         #     print(f'skipping already exists {t}, {v}')
                         #     continue
                         # if observation_exists(eobs, dt, v):
-                        for (dt, v) in eeobs:
-                            if dt == t and v == v:
+                        for (dti, vi) in eeobs:
+                            if dti == dt and v == vi:
                                 duplicates.append((t, v))
                                 # print(f'assuming already exists {t}, {v}')
                                 break
@@ -175,8 +175,6 @@ class ObservationMixin:
                         #     duplicates.append((t, v))
                         #     # print(f'assuming already exists {t}, {v}')
                         #     continue
-
-
 
                     if duplicates:
                         print(f'found {len(duplicates)} duplicates')
@@ -416,7 +414,7 @@ class BQSTAO(BaseSTAO):
                         #%a, %d %b %Y %H:%M:%S %Z
                         # where = f"{self._cursor_id}>PARSE_TIMESTAMP('%a, %d %b %Y %H:%M:%S. %Z', '{obj}')"
                         # where = f"{self._cursor_id}>{obj}"
-                        where = f"{self._cursor_id}>PARSE_TIMESTAMP('%Y-%m-%dT%H:%M:%E6S%Ez', '{obj}')"
+                        where = f"{self._cursor_id}>=PARSE_TIMESTAMP('%Y-%m-%dT%H:%M:%E6S%Ez', '{obj}')"
             except (ValueError, AttributeError, TypeError) as e:
                 print('error b {}'.format(e))
                 where = None
