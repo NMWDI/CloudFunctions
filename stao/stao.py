@@ -292,7 +292,7 @@ class BaseSTAO(STAO):
         """
         cnt = 0
         counter = self.state.get('counter', 0)
-
+        records = list(records)
         for i, record in enumerate(records):
             print(f'transform record {i} {self._transform_message(record)}')
             payloads = self._transform(request, record)
@@ -309,10 +309,12 @@ class BaseSTAO(STAO):
             print('-----------------------------------------------')
 
             # state = {self._cursor_id: record.get(self._cursor_id),
-            state = {self._cursor_id: self._get_latest_cursor(records),
-                     'limit': self._limit,
-                     }
-            self.state = state
+        state = {self._cursor_id: self._get_latest_cursor(records),
+                 'limit': self._limit,
+                 }
+
+        print('new state', state)
+        self.state = state
         self.state['counter'] = counter + 1
         return self.state
 
