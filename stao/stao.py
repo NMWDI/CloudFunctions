@@ -21,10 +21,10 @@ import pytz
 from google.cloud import bigquery, storage
 
 try:
-    from util import make_sta_client, observation_exists, asiotid, make_geometry_point_from_latlon
+    from util import make_sta_client, observation_exists, asiotid, make_geometry_point_from_latlon, make_statime
     from vocab import vocab_factory
 except ImportError:
-    from stao.util import make_sta_client, observation_exists, asiotid, make_geometry_point_from_latlon
+    from stao.util import make_sta_client, observation_exists, asiotid, make_geometry_point_from_latlon, make_statime
     from stao.vocab import vocab_factory
 
 
@@ -112,13 +112,15 @@ class ObservationMixin:
             print(f'******* no location {locationId}')
         else:
             thing = self._client.get_thing(name=self._thing_name, location=loc['@iot.id'])
-            print(f'tryinga {thing} {self._thing_name} {loc["@iot.id"]}')
+            if not thing:
+                print(f'********* no thing for location {locationId}, thing={self._thing_name}, location={loc}')
 
-            if thing:
+            else:
                 try:
                     ds = self._client.get_datastream(name=self._datastream_name, thing=thing['@iot.id'])
                 except StopIteration:
-                    print(f'********* no datastream for location {locationId}')
+                    print(f'********* no datastream for location {locationId}, datastream={self._datastream_name}, '
+                          f'thing={thing}')
                     return
 
                 if ds:
@@ -130,6 +132,13 @@ class ObservationMixin:
                     eobs = list(eobs)
 
                     print(f'existing obs={len(eobs)} datastream={ds} ')
+
+                    def func(e):
+                        tt = make_statime(e['phenomenonTime'])
+                        tt.replace(tzinfo=pytz.UTC)
+                        return tt, e['result']
+
+                    eeobs = [func(e) for e in eobs]
 
                     vs = []
                     duplicates = []
@@ -153,7 +162,8 @@ class ObservationMixin:
                         # if self._client.get_observation(t, v):
                         #     print(f'skipping already exists {t}, {v}')
                         #     continue
-                        if observation_exists(eobs, dt, v):
+                        # if observation_exists(eobs, dt, v):
+                        if (dt, v) in eeobs:
                             duplicates.append((t, v))
                             # print(f'assuming already exists {t}, {v}')
                             continue
