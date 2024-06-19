@@ -24,23 +24,27 @@ try:
         TOTALIZER_OBSERVED_PROPERTIES, TOTALIZER_SENSOR
     from stao import SimpleSTAO
 except ImportError:
-    from stao.constants import NO_DESCRIPTION, MANUAL_SENSOR, DTW_OBS_PROP, PRESSURE_SENSOR, ACOUSTIC_SENSOR, HYDROVU_SENSOR
-    from stao.constants import NO_DESCRIPTION, MANUAL_SENSOR, DTW_OBS_PROP, PRESSURE_SENSOR, ACOUSTIC_SENSOR,\
+    from stao.constants import NO_DESCRIPTION, MANUAL_SENSOR, DTW_OBS_PROP, PRESSURE_SENSOR, ACOUSTIC_SENSOR, \
+        HYDROVU_SENSOR
+    from stao.constants import NO_DESCRIPTION, MANUAL_SENSOR, DTW_OBS_PROP, PRESSURE_SENSOR, ACOUSTIC_SENSOR, \
         TOTALIZER_OBSERVED_PROPERTIES, TOTALIZER_SENSOR
     from stao.stao import SimpleSTAO
 
+
 # ======================== bernco ===========================
-def bernco_locations(request):
-    from bernco.entities import BerncoLocations
-    stao = BerncoLocations()
+def bernco_hydrovu_locations(request):
+    from bernco.entities import BernCoLocations
+    stao = BernCoLocations()
     return stao.render(request)
 
-def bernco_things(request):
-    from bernco.entities import BerncoThings
-    stao = BerncoThings()
+
+def bernco_hydrovu_things(request):
+    from bernco.entities import BernCoThings
+    stao = BernCoThings()
     return stao.render(request)
 
-def bernco_waterlevel_datastreams(request):
+
+def bernco_hydrovu_waterlevel_datastreams(request):
     from bernco.entities import BernCoWaterLevelsDatastreams
     stao = BernCoWaterLevelsDatastreams()
 
@@ -48,6 +52,13 @@ def bernco_waterlevel_datastreams(request):
     ss.render('sensor', HYDROVU_SENSOR)
 
     return stao.render(request)
+
+
+def bernco_hydrovu_water_levels(request):
+    from bernco.entities import BernCoObservations
+    stao = BernCoObservations()
+    return stao.render(request)
+
 
 # ======================== pvacd hydrovu ===========================
 def pecos_hydrovu_locations(request):
@@ -57,7 +68,7 @@ def pecos_hydrovu_locations(request):
     stao = PHVLocations()
     print('created PHVLocations', stao)
     try:
-        resp =  stao.render(request)
+        resp = stao.render(request)
     except BaseException as e:
         import traceback
 
@@ -89,6 +100,7 @@ def pecos_hydrovu_water_levels(request):
     from pecos_hydrovu.entities import PHVObservations
     stao = PHVObservations()
     return stao.render(request)
+
 
 # =================================================
 
@@ -183,6 +195,8 @@ def nmbgmr_manual_waterlevel_observations(request):
     from nmbgmr.entities import NMBGMRWaterLevelsObservations
     stao = NMBGMRWaterLevelsObservations('nmbgmr_manual_gwl')
     return stao.render(request)
+
+
 # =================================================
 
 
@@ -208,6 +222,8 @@ def ose_realtime_datastreams(request):
         ret.append(stao.render(request))
 
     return ','.join(ret)
+
+
 # =================================================
 
 
@@ -237,6 +253,7 @@ def cabq_waterdepths(request):
     stao = CABQWaterDepths()
     ret = stao.render(request)
     return ret
+
 
 # ============== EBID ========================
 def ebid_locations(request):
