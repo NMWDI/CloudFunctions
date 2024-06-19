@@ -43,7 +43,7 @@ class HydroVu_Site_STAO(BQSTAO):
     _dataset = 'nmwdi'
     _limit = 100
     _orderby = 'id asc'
-    _where = "LOWER(name) like '%level%'"
+
 
     def _transform_message(self, record):
         return f"id={record['id']}, name={record['name']}"

@@ -53,6 +53,7 @@ class PHVLocations(HydroVuLocations):
     _vocab_tag = 'phv'
     _tablename = 'pvacd_locations'
     _agency = AGENCY
+    _where = "LOWER(name) like '%level%'"
 
     # def _transform(self, request, record):
     #     payload = self._make_location_payload(record)
@@ -70,12 +71,14 @@ class PHVThings(HydroVuThings):
     _vocab_tag = 'phv'
     _tablename = 'pvacd_locations'
     _agency = AGENCY
+    _where = "LOWER(name) like '%level%'"
 
 
 class PHVWaterLevelsDatastreams(HydroVuWaterLevelsDatastreams):
     _vocab_tag = 'phv'
     _agency = AGENCY
     _tablename = 'pvacd_locations'
+    _where = "LOWER(name) like '%level%'"
 
 
 class PHVObservations(HydroVuObservations):
