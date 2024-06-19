@@ -105,4 +105,7 @@ class HydroVuObservations(ObservationMixin, BQSTAO):
 
     def _extract_timestamp(self, dt):
         return dt
+
+    def _get_cursor(self, record):
+        return record.get(self._cursor_id).isoformat()
 # ============= EOF =============================================

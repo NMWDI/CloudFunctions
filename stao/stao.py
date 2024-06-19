@@ -308,12 +308,22 @@ class BaseSTAO(STAO):
                 print(f'        skipping {record}')
             print('-----------------------------------------------')
 
-            state = {self._cursor_id: record.get(self._cursor_id),
+            # state = {self._cursor_id: record.get(self._cursor_id),
+            state = {self._cursor_id: self._get_latest_cursor(records),
                      'limit': self._limit,
                      }
             self.state = state
         self.state['counter'] = counter + 1
         return self.state
+
+    def _get_cursor(self, record):
+        return record.get(self._cursor_id)
+
+    def _get_latest_cursor(self, records):
+        cursors = [self._get_cursor(r) for r in records]
+        cursors = [c for c in cursors if c]
+        if cursors:
+            return max(cursors)
 
     def _load_record(self, payload, dry):
         """
@@ -378,8 +388,9 @@ class BQSTAO(BaseSTAO):
                     if obj is not None:
                         #Fri, 14 Jun 2024 01:04:51 GMT
                         #%a, %d %b %Y %H:%M:%S %Z
-                        where = f"{self._cursor_id}>PARSE_TIMESTAMP('%a, %d %b %Y %H:%M:%S %Z', '{obj}')"
+                        # where = f"{self._cursor_id}>PARSE_TIMESTAMP('%a, %d %b %Y %H:%M:%S. %Z', '{obj}')"
                         # where = f"{self._cursor_id}>{obj}"
+                        where = f"{self._cursor_id}>PARSE_TIMESTAMP('%Y-%m-%dT%H:%M:%S.%f', '{obj}'"
             except (ValueError, AttributeError, TypeError) as e:
                 print('error b {}'.format(e))
                 where = None
