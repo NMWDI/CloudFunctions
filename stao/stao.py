@@ -390,7 +390,7 @@ class BQSTAO(BaseSTAO):
                         #%a, %d %b %Y %H:%M:%S %Z
                         # where = f"{self._cursor_id}>PARSE_TIMESTAMP('%a, %d %b %Y %H:%M:%S. %Z', '{obj}')"
                         # where = f"{self._cursor_id}>{obj}"
-                        where = f"{self._cursor_id}>PARSE_TIMESTAMP('%Y-%m-%dT%H:%M:%S.%f', '{obj}'"
+                        where = f"{self._cursor_id}>PARSE_TIMESTAMP('%Y-%m-%dT%H:%M:%S.%f', '{obj}')"
             except (ValueError, AttributeError, TypeError) as e:
                 print('error b {}'.format(e))
                 where = None
