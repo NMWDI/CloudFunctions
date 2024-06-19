@@ -163,12 +163,20 @@ class ObservationMixin:
                         #     print(f'skipping already exists {t}, {v}')
                         #     continue
                         # if observation_exists(eobs, dt, v):
-                        if (dt, v) in eeobs:
-                            duplicates.append((t, v))
-                            # print(f'assuming already exists {t}, {v}')
-                            continue
+                        for (dt, v) in eeobs:
+                            if dt == t and v == v:
+                                duplicates.append((t, v))
+                                # print(f'assuming already exists {t}, {v}')
+                                break
+                        else:
+                            vs.append((t, t, v))
 
-                        vs.append((t, t, v))
+                        # if (dt, v) in eeobs:
+                        #     duplicates.append((t, v))
+                        #     # print(f'assuming already exists {t}, {v}')
+                        #     continue
+
+
 
                     if duplicates:
                         print(f'found {len(duplicates)} duplicates')
