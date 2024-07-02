@@ -103,6 +103,13 @@ class HydroVuObservations(ObservationMixin, BQSTAO):
     _timestamp_field = 'timestamp'
     _value_field = 'value'
 
+    def _transform_value(self, v, record):
+        if record['unitId'] == "35":
+            # convert meters to feet
+            return v * 3.28084
+
+        return v
+
     def _extract_timestamp(self, dt):
         return dt
 

@@ -88,7 +88,7 @@ class ObservationMixin:
             yield {'locationId': g, 'observations': obs,
                    self._cursor_id: maxo}
 
-    def _transform_value(self, v):
+    def _transform_value(self, v, record):
         return v
 
     def _transform_timestamp(self, dt):
@@ -155,7 +155,7 @@ class ObservationMixin:
                         v = obs[self._value_field]
                         try:
                             v = float(v)
-                            v = self._transform_value(v)
+                            v = self._transform_value(v, record)
                         except (TypeError, ValueError) as e:
                             print(f'skipping. error={e}. v={v}')
 

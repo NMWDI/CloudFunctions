@@ -86,9 +86,6 @@ class PHVObservations(HydroVuObservations):
     _tablename = 'pvacd_readings'
     _agency = AGENCY
 
-    def _transform_value(self, v):
-        # convert meters to feet
-        return v * 3.28084
 
 # class PHVThings(PHV_Site_STAO, ThingMixin):
 #     _entity_tag = 'thing'
