@@ -155,7 +155,7 @@ class ObservationMixin:
                         v = obs[self._value_field]
                         try:
                             v = float(v)
-                            v = self._transform_value(v, record)
+                            v = self._transform_value(v, obs)
                         except (TypeError, ValueError) as e:
                             print(f'skipping. error={e}. v={v}')
 
