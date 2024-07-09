@@ -104,7 +104,7 @@ class HydroVuObservations(ObservationMixin, BQSTAO):
     _value_field = 'value'
 
     def _transform_value(self, v, record):
-        if record['unitId'] == "35":
+        if record['unitId'] == 35:
             # convert meters to feet
             return v * 3.28084
 
