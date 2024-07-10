@@ -36,7 +36,7 @@ LOCATION_IDS = {
     1515: 'Poe Corn Level',
     1516: 'Transwestern Level' ,
     1517: 'Berrendo-Smith level',
-    1518: 'LFD Level',
+    1518: 'LFD Level ',
     1519: 'Orchard Park Level',
     1520: 'Greenfield level',
     1521: 'Bartlett level',
