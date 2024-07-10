@@ -14,6 +14,8 @@
 # limitations under the License.
 # ===============================================================================
 # try:
+import pytz
+
 from stao.base_stao import BQSTAO, DatastreamMixin, ObservationMixin
 from stao.constants import MANUAL_GWL_DS, WATER_WELL
 
@@ -52,10 +54,10 @@ class PecosManualWaterLevelsObservations(ObservationMixin, BQSTAO):
     _limit = 500
     _entity_tag = 'observation'
 
-    _orderby = '_airbyte_extracted_at asc'
+    _orderby = 'id asc'
 
     _location_field = 'well_id'
-    _cursor_id = '_airbyte_extracted_at'
+    _cursor_id = 'id'
 
     _datastream_name = MANUAL_GWL_DS['name']
     _thing_name = WATER_WELL['name']
@@ -77,13 +79,15 @@ class PecosManualWaterLevelsObservations(ObservationMixin, BQSTAO):
         return v
 
     def _transform_timestamp(self, dt):
+        dt = dt.replace(tzinfo=pytz.UTC)
         return dt
+
 
     def _extract_timestamp(self, dt):
         return dt
 
-    def _get_cursor(self, record):
-        return record.get(self._cursor_id).isoformat()
+    # def _get_cursor(self, record):
+    #     return record.get(self._cursor_id).isoformat()
 
 
 class PecosManualWaterlevelsDatastreams(BQSTAO, DatastreamMixin):

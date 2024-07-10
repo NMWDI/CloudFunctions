@@ -291,5 +291,7 @@ def isc_seven_rivers_totalizer_datastreams(request):
 
 if __name__ == '__main__':
     # pecos_manual_waterlevel_datastreams(None)
-    pecos_manual_waterlevel_observations(None)
+    state = None
+    for i in range(2):
+        state = pecos_manual_waterlevel_observations(state)
 # ============= EOF =============================================

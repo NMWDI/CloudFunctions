@@ -173,7 +173,7 @@ class ObservationMixin:
                         for (dti, vi) in eeobs:
                             if dti == dt and v == vi:
                                 duplicates.append((t, v))
-                                # print(f'assuming already exists {t}, {v}')
+                                print(f'assuming already exists {t}, {v}')
                                 break
                         else:
                             vs.append((t, t, v))
@@ -273,7 +273,9 @@ class BaseSTAO(STAO):
         """
 
         if request:
-            if request.json:
+            if isinstance(request, dict):
+                self.state = request
+            elif request.json:
                 self.state = request.json
 
         data = self._extract(request)
@@ -403,20 +405,26 @@ class BQSTAO(BaseSTAO):
     _orderby = None
 
     def _extract(self, request):
-        print('request {} {}'.format(request, request.json if request else 'no json'))
+        state = None
+        if isinstance(request, dict):
+            state = request
+        elif request:
+            state = request.json
+
+        print('request {} {}'.format(request, state if request else 'no json'))
         try:
-            where = request.json.get('where')
+            where = state.get('where')
         except (ValueError, AttributeError) as e:
             print('error a {}'.format(e))
             where = None
 
         if not where:
             try:
-                if self._cursor_id == 'OBJECTID':
-                    obj = int(request.json.get(self._cursor_id))
+                if self._cursor_id in ('OBJECTID', 'id'):
+                    obj = int(state.get(self._cursor_id))
                     where = f"{self._cursor_id}>{obj}"
                 else:
-                    obj = request.json.get(self._cursor_id)
+                    obj = state.get(self._cursor_id)
                     if obj is not None:
                         #Fri, 14 Jun 2024 01:04:51 GMT
                         #%a, %d %b %Y %H:%M:%S %Z
@@ -434,7 +442,7 @@ class BQSTAO(BaseSTAO):
                 where = self._where
 
         try:
-            self._limit = int(request.json.get('limit'))
+            self._limit = int(state.get('limit'))
         except (ValueError, AttributeError, TypeError):
             pass
 
