@@ -14,11 +14,8 @@
 # limitations under the License.
 # ===============================================================================
 from sta.definitions import FOOT, OM_Measurement
-
-try:
-    from constants import WATER_WELL, HYDROVU_SENSOR, DTW_OBS_PROP, GWL_DS, WELL_LOCATION_DESCRIPTION, MANUAL_GWL_DS
-except ImportError:
-    from stao.constants import WATER_WELL, HYDROVU_SENSOR, DTW_OBS_PROP, GWL_DS, WELL_LOCATION_DESCRIPTION
+from stao.constants import (WATER_WELL, HYDROVU_SENSOR, DTW_OBS_PROP,
+                            GWL_DS, WELL_LOCATION_DESCRIPTION, MANUAL_GWL_DS)
 
 
 def clean_name(name):
