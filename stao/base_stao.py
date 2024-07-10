@@ -20,12 +20,17 @@ import pytz
 
 from google.cloud import bigquery, storage
 
-try:
-    from util import make_sta_client, observation_exists, asiotid, make_geometry_point_from_latlon, make_statime
-    from vocab import vocab_factory
-except ImportError:
-    from stao.util import make_sta_client, observation_exists, asiotid, make_geometry_point_from_latlon, make_statime
-    from stao.vocab import vocab_factory
+from stao.util import make_statime, asiotid, make_sta_client, make_geometry_point_from_latlon
+from stao.vocab import vocab_factory
+
+
+#
+# try:
+#     from util import make_sta_client, observation_exists, asiotid, make_geometry_point_from_latlon, make_statime
+#     from vocab import vocab_factory
+# except ImportError:
+#     from stao.util import make_sta_client, observation_exists, asiotid, make_geometry_point_from_latlon, make_statime
+#     from stao.vocab import vocab_factory
 
 
 class ObservationMixin:
@@ -49,9 +54,16 @@ class ObservationMixin:
     def _get_load_function_name(self):
         return 'add_observations'
 
-    def _get_location(self, locationId, record):
-        q = f"properties/source_id eq '{locationId}' and properties/agency eq '{self._agency}'"
-        return self._client.get_location(query=q)
+    def _get_location(self, record, location_id=None):
+        if location_id is None:
+            location_id = record['locationId']
+            try:
+                location_id = int(location_id)
+            except ValueError:
+                pass
+
+        q = f"properties/source_id eq '{location_id}' and properties/agency eq '{self._agency}'"
+        return self._client.get_location(query=q), location_id
 
     def _location_grouper(self, records):
         def key(r):
@@ -101,13 +113,8 @@ class ObservationMixin:
 
     def _transform(self, request, record):
         print('traceasdf', record)
-        locationId = record['locationId']
-        try:
-            locationId = int(locationId)
-        except ValueError:
-            pass
 
-        loc = self._get_location(locationId, record)
+        loc, locationId = self._get_location(record)
         if not loc:
             print(f'******* no location {locationId}')
         else:
@@ -435,7 +442,9 @@ class BQSTAO(BaseSTAO):
         return self._handle_extract(self._get_bq_items(self._fields, self._dataset, self._tablename, where=where))
 
     def _bq_query(self, sql, **kw):
-        client = bigquery.Client()
+        client = bigquery.Client(
+            project='waterdatainitiative-271000',
+        )
         print(f'BQ Query {sql}')
         job = client.query(sql, **kw)
         return job.result()
@@ -459,8 +468,10 @@ class BQSTAO(BaseSTAO):
 
 
 class DatastreamMixin:
-    def _make_datastream_payload(self, record, tag, agency):
-        thing = self._get_thing(record, agency)
+    def _make_datastream_payload(self, record, tag, agency, thing=None):
+        if thing is None:
+            thing = self._get_thing(record, agency)
+
         if thing:
             dtw = self.toST(f'{tag}.observed_property.name')
             sn = self.toST(f'{tag}.sensor.name')

@@ -16,7 +16,7 @@
 from sta.definitions import FOOT, OM_Measurement
 
 try:
-    from constants import WATER_WELL, HYDROVU_SENSOR, DTW_OBS_PROP, GWL_DS, WELL_LOCATION_DESCRIPTION
+    from constants import WATER_WELL, HYDROVU_SENSOR, DTW_OBS_PROP, GWL_DS, WELL_LOCATION_DESCRIPTION, MANUAL_GWL_DS
 except ImportError:
     from stao.constants import WATER_WELL, HYDROVU_SENSOR, DTW_OBS_PROP, GWL_DS, WELL_LOCATION_DESCRIPTION
 
@@ -51,12 +51,42 @@ PHV = {'location': {'latitude': 'latitude',
        }
 
 
+PECOS_MANUAL = {
+                'location': {'latitude': 'latitude',
+                             'longitude': 'longitude',
+                             'description': {'text': WELL_LOCATION_DESCRIPTION},
+                             'name': {'column': 'name',
+                                      # 'postprocess': clean_name
+                                      },
+                             'properties': {'source_id': 'id',
+                                            'hydrovu_description': 'description'}},
+
+                'thing': {'name': {'text': WATER_WELL['name']},
+                          'description': {'text': WATER_WELL['description']},
+                          'properties': {'source_id': 'id'}},
+                'manual': {'sensor': {'name': {'text': 'Manual'}},
+                           'observed_property': {'name': {'text': DTW_OBS_PROP['name']}},
+                           'unitOfMeasurement': {'text': FOOT},
+                           'observationType': {'text': OM_Measurement},
+                           'datastream': {'name': {'text': MANUAL_GWL_DS['name']},
+                                          'description': {'text': MANUAL_GWL_DS['description']}}
+                           },
+                'gwl': {'sensor': {'name': {'text': HYDROVU_SENSOR['name']}},
+                        'observed_property': {'name': {'text': DTW_OBS_PROP['name']}},
+                        'unitOfMeasurement': {'text': FOOT},
+                        'observationType': {'text': OM_Measurement},
+                        'datastream': {'name': {'text': GWL_DS['name']},
+                                       'description': {'text': GWL_DS['description']}}}
+                }
+
+
 class VocabMapper:
     def load(self, name):
         vb = {}
         if name == 'phv':
             vb = PHV
-
+        elif name == 'pecos_manual':
+            vb = PECOS_MANUAL
         self._vocab = vb
 
     def toST(self, path, record=None, default=None):

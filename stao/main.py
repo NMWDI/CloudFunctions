@@ -17,18 +17,22 @@
 """
 main.py.  This module holds all the cloud function entry points.
 """
+from constants import NO_DESCRIPTION, MANUAL_SENSOR, DTW_OBS_PROP, PRESSURE_SENSOR, ACOUSTIC_SENSOR, \
+    TOTALIZER_OBSERVED_PROPERTIES, TOTALIZER_SENSOR, HYDROVU_SENSOR
+from base_stao import SimpleSTAO
 
-try:
-    from constants import NO_DESCRIPTION, MANUAL_SENSOR, DTW_OBS_PROP, PRESSURE_SENSOR, ACOUSTIC_SENSOR, HYDROVU_SENSOR
-    from constants import NO_DESCRIPTION, MANUAL_SENSOR, DTW_OBS_PROP, PRESSURE_SENSOR, ACOUSTIC_SENSOR, \
-        TOTALIZER_OBSERVED_PROPERTIES, TOTALIZER_SENSOR
-    from stao import SimpleSTAO
-except ImportError:
-    from stao.constants import NO_DESCRIPTION, MANUAL_SENSOR, DTW_OBS_PROP, PRESSURE_SENSOR, ACOUSTIC_SENSOR, \
-        HYDROVU_SENSOR
-    from stao.constants import NO_DESCRIPTION, MANUAL_SENSOR, DTW_OBS_PROP, PRESSURE_SENSOR, ACOUSTIC_SENSOR, \
-        TOTALIZER_OBSERVED_PROPERTIES, TOTALIZER_SENSOR
-    from stao.stao import SimpleSTAO
+
+# try:
+#     from constants import NO_DESCRIPTION, MANUAL_SENSOR, DTW_OBS_PROP, PRESSURE_SENSOR, ACOUSTIC_SENSOR, \
+#         TOTALIZER_OBSERVED_PROPERTIES, TOTALIZER_SENSOR, HYDROVU_SENSOR
+#     from stao import SimpleSTAO
+# except ImportError as e:
+#     print('imasdf', e)
+#     from stao.constants import NO_DESCRIPTION, MANUAL_SENSOR, DTW_OBS_PROP, PRESSURE_SENSOR, ACOUSTIC_SENSOR, \
+#         HYDROVU_SENSOR
+#     from stao.constants import NO_DESCRIPTION, MANUAL_SENSOR, DTW_OBS_PROP, PRESSURE_SENSOR, ACOUSTIC_SENSOR, \
+#         TOTALIZER_OBSERVED_PROPERTIES, TOTALIZER_SENSOR
+#     from stao.stao import SimpleSTAO
 
 
 # ======================== bernco ===========================
@@ -58,6 +62,23 @@ def bernco_hydrovu_water_levels(request):
     from bernco.entities import BernCoObservations
     stao = BernCoObservations()
     return stao.render(request)
+
+
+def pecos_manual_waterlevel_datastreams(request):
+    from pecos_manual.entities import PecosManualWaterlevelsDatastreams
+    stao = PecosManualWaterlevelsDatastreams()
+
+    ss = SimpleSTAO()
+    ss.render('sensor', MANUAL_SENSOR)
+    ss.render('observed_property', DTW_OBS_PROP)
+
+    return stao.render(request)
+
+
+def pecos_manual_waterlevel_observations(request):
+    from pecos_manual.entities import PecosManualWaterLevelsObservations
+    stao = PecosManualWaterLevelsObservations()
+    return stao.render(request, dry=True)
 
 
 # ======================== pvacd hydrovu ===========================
@@ -266,4 +287,9 @@ def ebid_waterlevels(request):
     from ebid.entities import EBIDGWLObservations
     stao = EBIDGWLObservations()
     return stao.render(request)
+
+
+# if __name__ == '__main__':
+#     # pecos_manual_waterlevel_datastreams(None)
+#     pecos_manual_waterlevel_observations(None)
 # ============= EOF =============================================
