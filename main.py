@@ -78,7 +78,7 @@ def pecos_manual_waterlevel_datastreams(request):
 def pecos_manual_waterlevel_observations(request):
     from stao.pecos_manual.entities import PecosManualWaterLevelsObservations
     stao = PecosManualWaterLevelsObservations()
-    return stao.render(request)
+    return stao.render(request, dry=True)
 
 
 # ======================== pvacd hydrovu ===========================
