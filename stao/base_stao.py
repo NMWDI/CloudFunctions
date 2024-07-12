@@ -434,11 +434,19 @@ class BQSTAO(BaseSTAO):
                     obj = state.get(self._cursor_id)
                     if obj is not None:
                         if isinstance(obj, str):
+                            for fmt in ('%a, %d %b %Y %H:%M:%S. %Z', '%Y-%m-%dT%H:%M:%E6S%Ez'):
+                                try:
+                                    _ = datetime.datetime.strptime(obj, fmt)
+                                    where = f"{self._cursor_id}>=PARSE_TIMESTAMP('{fmt}', '{obj}')"
+                                    break
+                                except ValueError:
+                                    pass
+
                             #Fri, 14 Jun 2024 01:04:51 GMT
                             #%a, %d %b %Y %H:%M:%S %Z
                             # where = f"{self._cursor_id}>PARSE_TIMESTAMP('%a, %d %b %Y %H:%M:%S. %Z', '{obj}')"
                             # where = f"{self._cursor_id}>{obj}"
-                            where = f"{self._cursor_id}>=PARSE_TIMESTAMP('%Y-%m-%dT%H:%M:%E6S%Ez', '{obj}')"
+
                         else:
                             where = f"{self._cursor_id}>'{obj}'"
             except (ValueError, AttributeError, TypeError) as e:
