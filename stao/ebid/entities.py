@@ -20,38 +20,50 @@ from itertools import groupby
 from sta.definitions import FOOT, OM_Measurement
 from sta.util import statime
 
-try:
-    from stao import BQSTAO, LocationGeoconnexMixin, ObservationMixin
-    from util import make_geometry_point_from_latlon, asiotid, make_statime
-    from constants import GWL_DS, DTW_OBS_PROP, MANUAL_SENSOR, PRESSURE_SENSOR, WATER_QUANTITY, ACOUSTIC_SENSOR, \
-        WELL_LOCATION_DESCRIPTION, WATER_WELL, STREAM_GAUGE
-except ImportError:
-    from stao.stao import BQSTAO, LocationGeoconnexMixin, ObservationMixin, SimpleSTAO
-    from stao.util import make_geometry_point_from_latlon, asiotid, make_statime
-    from stao.constants import GWL_DS, DTW_OBS_PROP, MANUAL_SENSOR, PRESSURE_SENSOR, WATER_QUANTITY, ACOUSTIC_SENSOR, \
-        WELL_LOCATION_DESCRIPTION, WATER_WELL, STREAM_GAUGE, ONERAIN_SENSOR
+from stao.base_stao import LocationGeoconnexMixin, ObservationMixin, BQSTAO
+from stao.constants import WELL_LOCATION_DESCRIPTION, WATER_WELL, STREAM_GAUGE, DTW_OBS_PROP, ONERAIN_SENSOR, GWL_DS
+from stao.util import make_geometry_point_from_latlon, asiotid
+
+# try:
+#     from stao import BQSTAO, LocationGeoconnexMixin, ObservationMixin
+#     from util import make_geometry_point_from_latlon, asiotid, make_statime
+#     from constants import GWL_DS, DTW_OBS_PROP, MANUAL_SENSOR, PRESSURE_SENSOR, WATER_QUANTITY, ACOUSTIC_SENSOR, \
+#         WELL_LOCATION_DESCRIPTION, WATER_WELL, STREAM_GAUGE
+# except ImportError:
+#     from stao.stao import BQSTAO, LocationGeoconnexMixin, ObservationMixin, SimpleSTAO
+#     from stao.util import make_geometry_point_from_latlon, asiotid, make_statime
+#     from stao.constants import GWL_DS, DTW_OBS_PROP, MANUAL_SENSOR, PRESSURE_SENSOR, WATER_QUANTITY, ACOUSTIC_SENSOR, \
+#         WELL_LOCATION_DESCRIPTION, WATER_WELL, STREAM_GAUGE, ONERAIN_SENSOR
 
 AGENCY = 'EBID'
 
 
 class EBID_Site_STAO(BQSTAO):
-    _fields = ['site_id', 'location', 'client_id', 'elevation', 'system_id', 'or_site_id',
-               'latitude_dec', 'longitude_dec']
-
-    _dataset = 'ebid'
-    _tablename = 'GetSiteMetaData'
+    _fields = ['site.site_id', 'site.location', 'client_id', 'system_id', 'site.or_site_id',
+               'cast(elevation as FLOAT64) as elevation',
+               'cast(latitude_dec as FLOAT64) as latitude_dec',
+               'cast(longitude_dec as FLOAT64) as longitude_dec',
+               '(cast(reference as FLOAT64)/3.28084) as reference']
+    _join = 'nmwdi.ebid_get_sensor_meta_data as s on site.or_site_id=s.or_site_id'
+    _dataset = 'nmwdi'
+    _tablename = 'ebid_get_site_meta_data as site'
 
     _limit = 100
     _orderby = 'or_site_id asc'
 
     def _transform_message(self, record):
+        print(record)
         return f"site_id={record['site_id']} or_site_id={record['or_site_id']}"
 
     def location_name(self, record):
         return record['site_id'].upper()
 
 
-class EBIDLocations(LocationGeoconnexMixin, EBID_Site_STAO):
+class EBID_Well_Site_STAO(EBID_Site_STAO):
+    _where = "sensor_class=102"  # only get sites with depth to water
+
+
+class EBIDWellLocations(LocationGeoconnexMixin, EBID_Well_Site_STAO):
     _entity_tag = 'location'
 
     def _transform(self, request, record):
@@ -62,18 +74,19 @@ class EBIDLocations(LocationGeoconnexMixin, EBID_Site_STAO):
 
         lat = record['latitude_dec']
         lon = record['longitude_dec']
+        elevation = record['reference']
 
         payload = {'name': self.location_name(record),
                    'description': WELL_LOCATION_DESCRIPTION,
                    'properties': properties,
-                   'location': make_geometry_point_from_latlon(lat, lon),
+                   'location': make_geometry_point_from_latlon(lat, lon, elevation),
                    "encodingType": "application/vnd.geo+json",
                    }
 
         return payload
 
 
-class EBIDThings(EBID_Site_STAO):
+class EBIDWellThings(EBID_Well_Site_STAO):
     _entity_tag = 'thing'
 
     def _transform(self, request, record):
@@ -87,17 +100,17 @@ class EBIDThings(EBID_Site_STAO):
                        'properties': {'agency': AGENCY,
                                       }
                        }
-        else:
-            payload = {'name': STREAM_GAUGE['name'],
-                       'Locations': [{'@iot.id': location['@iot.id']}],
-                       'description': STREAM_GAUGE['description'],
-                       'properties': {'agency': AGENCY,
-                                      }
-                       }
-        return payload
+        # else:
+        #     payload = {'name': STREAM_GAUGE['name'],
+        #                'Locations': [{'@iot.id': location['@iot.id']}],
+        #                'description': STREAM_GAUGE['description'],
+        #                'properties': {'agency': AGENCY,
+        #                               }
+        #                }
+            return payload
 
 
-class EBIDDatastreams(EBID_Site_STAO):
+class EBIDWellDatastreams(EBID_Well_Site_STAO):
     _entity_tag = 'datastream'
 
     def _transform(self, request, record):
@@ -135,17 +148,17 @@ class EBIDDatastreams(EBID_Site_STAO):
 
 
 class EBIDGWLObservations(ObservationMixin, BQSTAO):
-    _tablename = 'GetSensorData'
-    _fields = ['units', 'site_id', 'data_time',
-               'sensor_id', 'data_value', 'or_site_id', '_airbyte_extracted_at']
+    _dataset = 'nmwdi'
+    _tablename = 'ebid_get_sensor_data as data'
+    _fields = ['data_time',
+               'or_sensor_id', 'data_value', 'or_site_id', '_airbyte_extracted_at',]
     _limit = 500
-    _where = "sensor_id='97'"
-
-    _dataset = 'ebid'
+    _where = "or_sensor_id=4"
+    # _join = 'nmwdi.ebid_get_sensor_meta_data as s on data.or_sensor_id=s.or_sensor_id'
     _entity_tag = 'observation'
 
     _orderby = '_airbyte_extracted_at asc'
-    _location_field = 'site_id'
+    _location_field = 'or_site_id'
     _cursor_id = '_airbyte_extracted_at'
     _datastream_name = GWL_DS['name']
     _thing_name = WATER_WELL['name']
@@ -153,13 +166,25 @@ class EBIDGWLObservations(ObservationMixin, BQSTAO):
     _timestamp_field = 'data_time'
     _value_field = 'data_value'
 
-    _check_existing = False
+    # _check_existing = False
+
+    def _get_location(self, record, location_id=None, **kw):
+        print(record)
+        if location_id is None:
+            location_id = record['locationId']
+            try:
+                location_id = int(location_id)
+            except ValueError:
+                pass
+
+        q = f"properties/or_site_id eq '{location_id}' and properties/agency eq '{self._agency}'"
+        return self._client.get_location(query=q), location_id
 
     def _transform_timestamp(self, dt):
         dt = datetime.datetime.strptime(dt, '%Y-%m-%d %H:%M:%S')
         return dt
 
-    def _transform_value(self, v):
+    def _transform_value(self, v, record):
         return v*-1
 
     def _extract_timestamp(self, dt):
@@ -187,7 +212,7 @@ if __name__ == '__main__':
     # c.render(None, dry=True)
     # c.render(None, dry=True)
     state = None
-    for i in range(1):
+    for i in range(100):
         print(i, '---------------------------', state)
         if i:
             # state = json.loads(ret)

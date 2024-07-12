@@ -277,21 +277,38 @@ def isc_seven_rivers_totalizer_datastreams(request):
 
 
 # ============== EBID ========================
-# def ebid_locations(request):
-#     from ebid.entities import EBIDLocations
-#     stao = EBIDLocations()
-#     return stao.render(request)
-#
-#
-# def ebid_waterlevels(request):
-#     from ebid.entities import EBIDGWLObservations
-#     stao = EBIDGWLObservations()
-#     return stao.render(request)
+def ebid_well_locations(request):
+    from stao.ebid.entities import EBIDWellLocations
+    stao = EBIDWellLocations()
+    return stao.render(request, dry=False)
+
+
+def ebid_well_things(request):
+    from stao.ebid.entities import EBIDWellThings
+    stao = EBIDWellThings()
+    return stao.render(request, dry=False)
+
+
+def ebid_well_datastreams(request):
+    from stao.ebid.entities import EBIDWellDatastreams
+    stao = EBIDWellDatastreams()
+    return stao.render(request, dry=False)
+
+
+def ebid_well_waterlevels(request):
+    from stao.ebid.entities import EBIDGWLObservations
+    stao = EBIDGWLObservations()
+    return stao.render(request, dry=True)
 
 
 if __name__ == '__main__':
+    # ebid_locations(None)
+    # ebid_things(None)
+    # ebid_well_datastreams(None)
+    ebid_well_waterlevels(None)
+
     # pecos_manual_waterlevel_datastreams(None)
-    state = None
-    for i in range(2):
-        state = pecos_manual_waterlevel_observations(state)
+    # state = None
+    # for i in range(2):
+    #     state = pecos_manual_waterlevel_observations(state)
 # ============= EOF =============================================

@@ -118,7 +118,12 @@ class ObservationMixin:
         if not loc:
             print(f'******* no location {locationId}')
         else:
-            thing = self._client.get_thing(name=self._thing_name, location=loc['@iot.id'])
+            try:
+                thing = self._client.get_thing(name=self._thing_name, location=loc['@iot.id'])
+            except StopIteration:
+                print(f'********* no thing for location {locationId}, thing={self._thing_name}, location={loc}')
+                return
+
             if not thing:
                 print(f'********* no thing for location {locationId}, thing={self._thing_name}, location={loc}')
 
@@ -151,6 +156,7 @@ class ObservationMixin:
                     duplicates = []
                     components = ['phenomenonTime', 'resultTime', 'result']
                     for obs in record['observations']:
+                        print(obs)
                         dt = obs[self._timestamp_field]
                         dt = self._extract_timestamp(dt)
                         if not dt:
@@ -403,6 +409,7 @@ class BQSTAO(BaseSTAO):
 
     _where = None
     _orderby = None
+    _join = None
 
     def _extract(self, request):
         state = None
@@ -426,11 +433,14 @@ class BQSTAO(BaseSTAO):
                 else:
                     obj = state.get(self._cursor_id)
                     if obj is not None:
-                        #Fri, 14 Jun 2024 01:04:51 GMT
-                        #%a, %d %b %Y %H:%M:%S %Z
-                        # where = f"{self._cursor_id}>PARSE_TIMESTAMP('%a, %d %b %Y %H:%M:%S. %Z', '{obj}')"
-                        # where = f"{self._cursor_id}>{obj}"
-                        where = f"{self._cursor_id}>=PARSE_TIMESTAMP('%Y-%m-%dT%H:%M:%E6S%Ez', '{obj}')"
+                        if isinstance(obj, str):
+                            #Fri, 14 Jun 2024 01:04:51 GMT
+                            #%a, %d %b %Y %H:%M:%S %Z
+                            # where = f"{self._cursor_id}>PARSE_TIMESTAMP('%a, %d %b %Y %H:%M:%S. %Z', '{obj}')"
+                            # where = f"{self._cursor_id}>{obj}"
+                            where = f"{self._cursor_id}>=PARSE_TIMESTAMP('%Y-%m-%dT%H:%M:%E6S%Ez', '{obj}')"
+                        else:
+                            where = f"{self._cursor_id}>'{obj}'"
             except (ValueError, AttributeError, TypeError) as e:
                 print('error b {}'.format(e))
                 where = None
@@ -446,8 +456,13 @@ class BQSTAO(BaseSTAO):
         except (ValueError, AttributeError, TypeError):
             pass
 
+        join = None
+        if self._join:
+            join = f'join {self._join}'
+
         print('where {} {}'.format(where, self._limit))
-        return self._handle_extract(self._get_bq_items(self._fields, self._dataset, self._tablename, where=where))
+        return self._handle_extract(self._get_bq_items(self._fields, self._dataset, self._tablename,
+                                                       where=where, join=join))
 
     def _bq_query(self, sql, **kw):
         client = bigquery.Client(
@@ -457,9 +472,12 @@ class BQSTAO(BaseSTAO):
         job = client.query(sql, **kw)
         return job.result()
 
-    def _get_bq_items(self, fields, dataset, tablename, where=None):
+    def _get_bq_items(self, fields, dataset, tablename, where=None, join=None):
         fs = ','.join(fields)
         sql = f'select {fs} from {dataset}.{tablename}'
+
+        if join:
+            sql = f'{sql} {join} '
         if where:
             sql = f'{sql} where {where}'
 
@@ -548,8 +566,11 @@ class LocationGeoconnexMixin:
         iotid = obj.iotid
         props = payload['properties']
         props['geoconnex'] = f'https://geoconnex.us/nmwdi/st/locations/{iotid}'
-
-        self._client.patch_location(iotid, payload)
+        try:
+            self._client.patch_location(iotid, payload)
+        except TypeError:
+            print('failed patching location')
+            print('payload', payload)
 
 
 class BucketSTAO(BaseSTAO):

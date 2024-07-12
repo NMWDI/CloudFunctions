@@ -223,8 +223,12 @@ def make_geometry_point_from_utm(e, n, zone=None, ellps=None, srid=None):
     return make_geometry_point_from_latlon(lat, lon)
 
 
-def make_geometry_point_from_latlon(lat, lon):
-    return {"type": "Point", "coordinates": [float(lon), float(lat)]}
+def make_geometry_point_from_latlon(lat, lon, elevation=None):
+    coordinates = [float(lon), float(lat)]
+    if elevation:
+        coordinates.append(float(elevation))
+
+    return {"type": "Point", "coordinates": coordinates}
 
 
 def make_fuzzy_geometry_from_latlon(lat, lon):
