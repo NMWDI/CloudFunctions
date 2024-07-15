@@ -151,7 +151,7 @@ class EBIDGWLObservations(ObservationMixin, BQSTAO):
     _tablename = 'ebid_get_sensor_data as data'
     _fields = ['data_time',
                'or_sensor_id', 'data_value', 'or_site_id',]
-    _limit = 50
+    _limit = 500
     _where = "or_sensor_id=4"
     # _join = 'nmwdi.ebid_get_sensor_meta_data as s on data.or_sensor_id=s.or_sensor_id'
     _entity_tag = 'observation'
