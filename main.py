@@ -298,7 +298,7 @@ def ebid_well_datastreams(request):
 def ebid_well_waterlevels(request):
     from stao.ebid.entities import EBIDGWLObservations
     stao = EBIDGWLObservations()
-    return stao.render(request, dry=False)
+    return stao.render(request, dry=True)
 
 
 if __name__ == '__main__':

@@ -112,7 +112,7 @@ class ObservationMixin:
         return dt / 1000
 
     def _transform(self, request, record):
-        print('traceasdf', record)
+        # print('traceasdf', record)
 
         loc, locationId = self._get_location(record)
         if not loc:
@@ -137,7 +137,7 @@ class ObservationMixin:
 
                 if ds:
                     eobs = self._client.get_observations(ds,
-                                                         # limit=1,
+                                                         # limit=2000,
                                                          # pages=1,
                                                          verbose=False,
                                                          orderby='phenomenonTime desc')
@@ -156,7 +156,7 @@ class ObservationMixin:
                     duplicates = []
                     components = ['phenomenonTime', 'resultTime', 'result']
                     for obs in record['observations']:
-                        print(obs)
+                        # print(obs)
                         dt = obs[self._timestamp_field]
                         dt = self._extract_timestamp(dt)
                         if not dt:
@@ -177,6 +177,11 @@ class ObservationMixin:
                         #     continue
                         # if observation_exists(eobs, dt, v):
                         for (dti, vi) in eeobs:
+                            # print(vi, v)
+                            # if v == vi:
+                            #     if abs(dt-dti) < datetime.timedelta(days=1):
+                            #         print(dti, dt, dti-dt)
+
                             if dti == dt and v == vi:
                                 duplicates.append((t, v))
                                 print(f'assuming already exists {t}, {v}')
@@ -433,22 +438,28 @@ class BQSTAO(BaseSTAO):
                 else:
                     obj = state.get(self._cursor_id)
                     if obj is not None:
-                        if isinstance(obj, str):
-                            for fmt in ('%a, %d %b %Y %H:%M:%S. %Z', '%Y-%m-%dT%H:%M:%E6S%Ez'):
-                                try:
-                                    _ = datetime.datetime.strptime(obj, fmt)
-                                    where = f"{self._cursor_id}>=PARSE_TIMESTAMP('{fmt}', '{obj}')"
-                                    break
-                                except ValueError:
-                                    pass
-
-                            #Fri, 14 Jun 2024 01:04:51 GMT
-                            #%a, %d %b %Y %H:%M:%S %Z
-                            # where = f"{self._cursor_id}>PARSE_TIMESTAMP('%a, %d %b %Y %H:%M:%S. %Z', '{obj}')"
-                            # where = f"{self._cursor_id}>{obj}"
-
+                        if self._cursor_id == 'data_time':
+                            fmt = '%Y-%m-%d %H:%M:%S'
+                            where = f"PARSE_TIMESTAMP('{fmt}', {self._cursor_id})>PARSE_TIMESTAMP('{fmt}', '{obj}')"
                         else:
-                            where = f"{self._cursor_id}>'{obj}'"
+                            if isinstance(obj, str):
+                                for fmt in ('%a, %d %b %Y %H:%M:%S. %Z', '%Y-%m-%dT%H:%M:%E6S%Ez',
+                                            '%Y-%m-%d %H:%M:%S'):
+                                    try:
+                                        _ = datetime.datetime.strptime(obj, fmt)
+                                        where = f"{self._cursor_id}>=PARSE_TIMESTAMP('{fmt}', '{obj}')"
+                                        break
+                                    except ValueError as e:
+                                        print('valueaesfd', e, self._cursor_id, obj)
+                                        pass
+
+                                #Fri, 14 Jun 2024 01:04:51 GMT
+                                #%a, %d %b %Y %H:%M:%S %Z
+                                # where = f"{self._cursor_id}>PARSE_TIMESTAMP('%a, %d %b %Y %H:%M:%S. %Z', '{obj}')"
+                                # where = f"{self._cursor_id}>{obj}"
+
+                            else:
+                                where = f"{self._cursor_id}>'{obj}'"
             except (ValueError, AttributeError, TypeError) as e:
                 print('error b {}'.format(e))
                 where = None

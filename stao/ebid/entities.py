@@ -52,7 +52,6 @@ class EBID_Site_STAO(BQSTAO):
     _orderby = 'or_site_id asc'
 
     def _transform_message(self, record):
-        print(record)
         return f"site_id={record['site_id']} or_site_id={record['or_site_id']}"
 
     def location_name(self, record):
@@ -151,15 +150,15 @@ class EBIDGWLObservations(ObservationMixin, BQSTAO):
     _dataset = 'nmwdi'
     _tablename = 'ebid_get_sensor_data as data'
     _fields = ['data_time',
-               'or_sensor_id', 'data_value', 'or_site_id', '_airbyte_extracted_at',]
-    _limit = 500
+               'or_sensor_id', 'data_value', 'or_site_id',]
+    _limit = 50
     _where = "or_sensor_id=4"
     # _join = 'nmwdi.ebid_get_sensor_meta_data as s on data.or_sensor_id=s.or_sensor_id'
     _entity_tag = 'observation'
 
-    _orderby = '_airbyte_extracted_at asc'
+    _orderby = 'data_time asc'
     _location_field = 'or_site_id'
-    _cursor_id = '_airbyte_extracted_at'
+    _cursor_id = 'data_time'
     _datastream_name = GWL_DS['name']
     _thing_name = WATER_WELL['name']
     _agency = AGENCY
@@ -167,9 +166,11 @@ class EBIDGWLObservations(ObservationMixin, BQSTAO):
     _value_field = 'data_value'
 
     # _check_existing = False
+    def _transform_message(self, record):
+        return 'Foo'
 
     def _get_location(self, record, location_id=None, **kw):
-        print(record)
+        # print(record)
         if location_id is None:
             location_id = record['locationId']
             try:
@@ -182,6 +183,7 @@ class EBIDGWLObservations(ObservationMixin, BQSTAO):
 
     def _transform_timestamp(self, dt):
         dt = datetime.datetime.strptime(dt, '%Y-%m-%d %H:%M:%S')
+        dt = dt.replace(tzinfo=datetime.timezone.utc)
         return dt
 
     def _transform_value(self, v, record):
@@ -220,7 +222,7 @@ if __name__ == '__main__':
         else:
             dr = DummyRequest({})
 
-        state = c.render(dr, dry=True)
+        state = c.render(dr, dry=False)
 
 # c = EBIDLocations()
 # c = NMBGMRAcousticWaterLevelsDatastreams()
