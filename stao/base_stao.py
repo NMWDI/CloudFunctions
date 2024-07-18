@@ -51,6 +51,10 @@ class ObservationMixin:
     _value_field = None
     _cursor_id = None
 
+    _location = None
+    _thing = None
+    _datastream = None
+
     def _get_load_function_name(self):
         return 'add_observations'
 
@@ -136,6 +140,9 @@ class ObservationMixin:
                     return
 
                 if ds:
+                    self._thing = thing
+                    self._datastream = ds
+                    self._location = loc
                     eobs = self._client.get_observations(ds,
                                                          # limit=2000,
                                                          # pages=1,
@@ -353,7 +360,7 @@ class BaseSTAO(STAO):
             # state = {self._cursor_id: record.get(self._cursor_id),
         state = {self._cursor_id: self._get_latest_cursor(records),
                  'limit': self._limit,
-                 'counter': counter+1
+                 'counter': counter + 1
                  }
 
         print('new state', state)
@@ -560,10 +567,10 @@ class ThingMixin:
 
 
 class LocationMixin:
+    _entity_tag = 'location'
     def _make_location_payload(self, record):
         lat = self.toST('location.latitude', record)
         lon = self.toST('location.longitude', record)
-
         payload = {'name': self.toST('location.name', record),
                    'description': self.toST('location.description', record),
                    'location': make_geometry_point_from_latlon(lat, lon),
