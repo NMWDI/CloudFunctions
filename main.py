@@ -36,6 +36,13 @@ from stao.base_stao import SimpleSTAO
 
 
 # ======================== bernco ===========================
+
+def bernco_manual_water_levels(request):
+    from stao.bernco.manual import BernCoManualGWLObservations
+    stao = BernCoManualGWLObservations()
+    return stao.render(request)
+
+
 def bernco_hydrovu_locations(request):
     from stao.bernco.entities import BernCoLocations
     stao = BernCoLocations()

@@ -134,6 +134,14 @@ class BernCoManualGWLObservations(ObservationMixin, BQSTAO):
     def _extract_timestamp(self, dt):
         return dt
 
+class DummyRequest:
+    def __init__(self, p):
+        self._p = p
+
+    @property
+    def json(self):
+        return self._p
+
 
 if __name__ == '__main__':
     # b = BernCoLocations()
@@ -141,6 +149,16 @@ if __name__ == '__main__':
 
     # b = BernCoThings()
     # b.render(None, dry=False)
-    b = BernCoManualGWLObservations()
-    b.render(None, dry=True)
+    c = BernCoManualGWLObservations()
+    # b.render(None, dry=True)
+    state = None
+    for i in range(100):
+        print(i, '---------------------------', state)
+        if i:
+            # state = json.loads(ret)
+            dr = DummyRequest(state)
+        else:
+            dr = DummyRequest({})
+
+        state = c.render(dr, dry=True)
 # ============= EOF =============================================
