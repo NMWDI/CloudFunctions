@@ -43,6 +43,18 @@ def bernco_manual_water_levels(request):
     return stao.render(request)
 
 
+def bernco_manual_waterlevel_datastreams(request):
+    from stao.bernco.manual import BernCoManualGWLObservations
+    stao = BernCoManualGWLObservations()
+
+    ss = SimpleSTAO()
+    ss.render('sensor', MANUAL_SENSOR)
+    ss.render('observed_property', DTW_OBS_PROP)
+
+    return stao.render(request)
+
+
+
 def bernco_hydrovu_locations(request):
     from stao.bernco.entities import BernCoLocations
     stao = BernCoLocations()
