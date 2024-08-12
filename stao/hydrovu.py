@@ -18,19 +18,23 @@ from itertools import groupby
 
 from sta.definitions import FOOT, OM_Measurement
 
-try:
-    from constants import WATER_WELL, HYDROVU_SENSOR, DTW_OBS_PROP, GWL_DS
-    from stao import LocationGeoconnexMixin, BQSTAO, BaseSTAO, ObservationMixin, LocationMixin, ThingMixin, \
-        DatastreamMixin
-    from util import make_geometry_point_from_utm, make_geometry_point_from_latlon, make_fuzzy_geometry_from_latlon, \
-        asiotid, make_statime
-except ImportError:
-    print('hudyasd, import error', e)
-    from stao.constants import WATER_WELL, HYDROVU_SENSOR, DTW_OBS_PROP, GWL_DS
-    from stao.stao import LocationGeoconnexMixin, BQSTAO, BaseSTAO, ObservationMixin, LocationMixin, ThingMixin, \
-        DatastreamMixin
-    from stao.util import make_geometry_point_from_utm, make_geometry_point_from_latlon, \
-        make_fuzzy_geometry_from_latlon, asiotid, make_statime
+from stao.base_stao import BQSTAO, LocationGeoconnexMixin, LocationMixin, ThingMixin, DatastreamMixin, ObservationMixin
+from stao.constants import GWL_DS, WATER_WELL
+
+
+# try:
+#     from constants import WATER_WELL, HYDROVU_SENSOR, DTW_OBS_PROP, GWL_DS
+#     from stao import LocationGeoconnexMixin, BQSTAO, BaseSTAO, ObservationMixin, LocationMixin, ThingMixin, \
+#         DatastreamMixin
+#     from util import make_geometry_point_from_utm, make_geometry_point_from_latlon, make_fuzzy_geometry_from_latlon, \
+#         asiotid, make_statime
+# except ImportError:
+#     print('hudyasd, import error', e)
+#     from stao.constants import WATER_WELL, HYDROVU_SENSOR, DTW_OBS_PROP, GWL_DS
+#     from stao.stao import LocationGeoconnexMixin, BQSTAO, BaseSTAO, ObservationMixin, LocationMixin, ThingMixin, \
+#         DatastreamMixin
+#     from stao.util import make_geometry_point_from_utm, make_geometry_point_from_latlon, \
+#         make_fuzzy_geometry_from_latlon, asiotid, make_statime
 
 
 
@@ -44,6 +48,8 @@ class HydroVu_Site_STAO(BQSTAO):
     _limit = 100
     _orderby = 'id asc'
 
+    def _additional_properties(self, record):
+        return {}
 
     def _transform_message(self, record):
         return f"id={record['id']}, name={record['name']}"
@@ -57,7 +63,6 @@ class HydroVuLocations(LocationGeoconnexMixin, HydroVu_Site_STAO, LocationMixin)
 
         source_id = self.toST('location.properties.source_id', record)
         hvd = self.toST('location.properties.hydrovu_description', record)
-
         payload['properties'] = {'agency': self._agency,
                                  'source_id': source_id,
                                  'hydrovu.description': hvd}
@@ -69,8 +74,12 @@ class HydroVuThings(HydroVu_Site_STAO, ThingMixin):
 
     def _transform(self, request, record):
         payload = self._make_thing_payload(record)
-        payload['properties'] = {'agency': self._agency,
-                                 'source_id': self.toST('thing.properties.source_id', record)}
+
+        props = {'agency': self._agency,
+                 'source_id': self.toST('thing.properties.source_id', record)}
+
+        props.update(**self._additional_properties(record))
+        payload['properties'] = props
 
         return payload
 

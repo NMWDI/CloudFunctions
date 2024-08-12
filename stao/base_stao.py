@@ -402,6 +402,9 @@ class BaseSTAO(STAO):
         # print(f'     iotid={obj.iotid}')
         return obj
 
+    def _get_elevation(self, record):
+        return
+
 
 class BQSTAO(BaseSTAO):
     """
@@ -571,9 +574,12 @@ class LocationMixin:
     def _make_location_payload(self, record):
         lat = self.toST('location.latitude', record)
         lon = self.toST('location.longitude', record)
+
+        elevation = self._get_elevation(record)
+
         payload = {'name': self.toST('location.name', record),
                    'description': self.toST('location.description', record),
-                   'location': make_geometry_point_from_latlon(lat, lon),
+                   'location': make_geometry_point_from_latlon(lat, lon, elevation),
                    "encodingType": "application/vnd.geo+json",
                    }
         return payload
