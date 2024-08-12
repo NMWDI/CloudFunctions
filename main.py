@@ -336,8 +336,8 @@ if __name__ == '__main__':
     # ebid_things(None)
     # ebid_well_datastreams(None)
     # ebid_well_waterlevels(None)
-
-    pecos_hydrovu_locations(None)
+    pecos_hydrovu_things(None)
+    # pecos_hydrovu_locations(None)
     # pecos_manual_waterlevel_datastreams(None)
     # state = None
     # for i in range(2):
