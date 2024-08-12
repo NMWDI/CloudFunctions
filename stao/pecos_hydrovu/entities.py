@@ -17,7 +17,7 @@ from itertools import groupby
 
 from sta.definitions import FOOT, OM_Measurement
 
-from stao.hydrovu import HydroVuLocations, HydroVuWaterLevelsDatastreams, HydroVuObservations
+from stao.hydrovu import HydroVuLocations, HydroVuWaterLevelsDatastreams, HydroVuObservations, HydroVuThings
 
 # try:
 #     from stao import LocationGeoconnexMixin, BQSTAO, BaseSTAO, ObservationMixin
