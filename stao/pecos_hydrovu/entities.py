@@ -143,8 +143,8 @@ class PHVLocations(HydroVuLocations):
 
     def _get_elevation(self, record):
         for well in METADATA:
-            if well.name == record['name']:
-                return well.elevation / 3.28084
+            if well['name'] == record['name']:
+                return well['elevation'] / 3.28084
         return
 
     # def _transform(self, request, record):
