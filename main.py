@@ -17,6 +17,8 @@
 """
 main.py.  This module holds all the cloud function entry points.
 """
+import os
+
 from stao.constants import NO_DESCRIPTION, MANUAL_SENSOR, DTW_OBS_PROP, PRESSURE_SENSOR, ACOUSTIC_SENSOR, \
     TOTALIZER_OBSERVED_PROPERTIES, TOTALIZER_SENSOR, HYDROVU_SENSOR
 from stao.base_stao import SimpleSTAO
@@ -35,6 +37,16 @@ from stao.base_stao import SimpleSTAO
 #     from stao.stao import SimpleSTAO
 
 
+
+import sentry_sdk
+from sentry_sdk.integrations.gcp import GcpIntegration
+
+sentry_sdk.init(
+    dsn=os.getenv('SENTRY_DSN'),
+    integrations=[GcpIntegration()],
+    traces_sample_rate=1.0, # adjust the sample rate in production as needed
+
+)
 # ======================== bernco ===========================
 
 def bernco_manual_water_levels(request):

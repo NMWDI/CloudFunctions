@@ -1,6 +1,7 @@
 google-cloud-bigquery
 google-cloud-secret-manager
 google-cloud-storage
+sentry-sdk
 pysta==0.0.31
 requests
 pyproj
@@ -8,5 +9,6 @@ shapely
 geojson
 numpy
 pytz
+
 
 
