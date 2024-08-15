@@ -125,7 +125,6 @@ def pecos_manual_waterlevel_observations(request):
 
 # ======================== pvacd hydrovu ===========================
 def pecos_hydrovu_locations(request):
-    2/0
     print('received request', request)
     from stao.pecos_hydrovu.entities import PHVLocations
     print('imported PHVLocations', PHVLocations)
