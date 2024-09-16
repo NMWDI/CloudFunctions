@@ -37,16 +37,19 @@ from stao.base_stao import SimpleSTAO
 #     from stao.stao import SimpleSTAO
 
 
+try:
+    import sentry_sdk
+    from sentry_sdk.integrations.gcp import GcpIntegration
 
-import sentry_sdk
-from sentry_sdk.integrations.gcp import GcpIntegration
+    sentry_sdk.init(
+        dsn=os.getenv('SENTRY_DSN'),
+        integrations=[GcpIntegration()],
+        traces_sample_rate=1.0, # adjust the sample rate in production as needed
 
-sentry_sdk.init(
-    dsn=os.getenv('SENTRY_DSN'),
-    integrations=[GcpIntegration()],
-    traces_sample_rate=1.0, # adjust the sample rate in production as needed
+    )
+except ImportError as e:
+    print('sentry not enabled', e)
 
-)
 # ======================== bernco ===========================
 
 def bernco_manual_water_levels(request):
@@ -302,7 +305,6 @@ def isc_seven_rivers_totalizer_datastreams(request):
     stao = ISCSevenRiversTotalizerDatastreams()
     return stao.render(request)
 
-
 # =============== CABQ =====================
 # def cabq_waterelevations(request):
 #     from cabq.entities import CABQWaterElevations
@@ -316,6 +318,35 @@ def isc_seven_rivers_totalizer_datastreams(request):
 #     stao = CABQWaterDepths()
 #     ret = stao.render(request)
 #     return ret
+
+def cabq_locations(request):
+    from stao.cabq.entities import CABQLocations
+    stao = CABQLocations()
+    return stao.render(request, dry=False)
+
+
+def cabq_things(request):
+    from stao.cabq.entities import CABQThings
+    stao = CABQThings()
+    return stao.render(request, dry=False)
+
+
+def cabq_datastreams(request):
+    from stao.cabq.entities import CABQDatastreams
+    stao = CABQDatastreams()
+    return stao.render(request, dry=False)
+
+
+def cabq_waterlevels(request):
+    from stao.cabq.entities import CABQWaterDepths
+    stao = CABQWaterDepths()
+    return stao.render(request, dry=False)
+
+
+def cabq_waterlevel_elevations(request):
+    from stao.cabq.entities import CABQWaterElevations
+    stao = CABQWaterElevations()
+    return stao.render(request, dry=False)
 
 
 # ============== EBID ========================
@@ -344,11 +375,17 @@ def ebid_well_waterlevels(request):
 
 
 if __name__ == '__main__':
+    # cabq_locations(None)
+    # cabq_things(None)
+    # cabq_datastreams(None)
+    # cabq_waterlevels(None)
+    cabq_waterlevel_elevations(None)
+
     # ebid_locations(None)
     # ebid_things(None)
     # ebid_well_datastreams(None)
     # ebid_well_waterlevels(None)
-    pecos_hydrovu_things(None)
+    # pecos_hydrovu_things(None)
     # pecos_hydrovu_locations(None)
     # pecos_manual_waterlevel_datastreams(None)
     # state = None

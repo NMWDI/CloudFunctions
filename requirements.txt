@@ -9,6 +9,7 @@ shapely
 geojson
 numpy
 pytz
+httpx
 
 
 

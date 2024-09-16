@@ -20,16 +20,21 @@ import requests
 from sta.definitions import FOOT, OM_Measurement
 from sta.util import statime
 
-try:
-    from stao import BucketSTAO, ObservationMixin, BaseSTAO
-    from util import make_geometry_point_from_latlon, copy_properties, asiotid
-    from constants import DTW_OBS_PROP, NO_DESCRIPTION, WATER_WELL, ENCODING_GEOJSON, MANUAL_SENSOR, GWL_DS, \
-        ELEV_OBS_PROP, GWE_DS, WATER_QUANTITY
-except ImportError:
-    from stao.stao import BucketSTAO, ObservationMixin, BaseSTAO
-    from stao.util import make_geometry_point_from_latlon, copy_properties, asiotid
-    from stao.constants import DTW_OBS_PROP, NO_DESCRIPTION, WATER_WELL, ENCODING_GEOJSON, MANUAL_SENSOR, GWL_DS, \
-        ELEV_OBS_PROP, GWE_DS, WATER_QUANTITY
+from stao.base_stao import BaseSTAO, ObservationMixin
+from stao.constants import NO_DESCRIPTION, ENCODING_GEOJSON, WATER_WELL, DTW_OBS_PROP, MANUAL_SENSOR, WATER_QUANTITY, \
+    GWL_DS
+from stao.util import make_geometry_point_from_latlon, asiotid
+
+# try:
+#     from stao import BucketSTAO, ObservationMixin, BaseSTAO
+#     from util import make_geometry_point_from_latlon, copy_properties, asiotid
+#     from constants import DTW_OBS_PROP, NO_DESCRIPTION, WATER_WELL, ENCODING_GEOJSON, MANUAL_SENSOR, GWL_DS, \
+#         ELEV_OBS_PROP, GWE_DS, WATER_QUANTITY
+# except ImportError:
+#     from stao.stao import BucketSTAO, ObservationMixin, BaseSTAO
+#     from stao.util import make_geometry_point_from_latlon, copy_properties, asiotid
+#     from stao.constants import DTW_OBS_PROP, NO_DESCRIPTION, WATER_WELL, ENCODING_GEOJSON, MANUAL_SENSOR, GWL_DS, \
+#         ELEV_OBS_PROP, GWE_DS, WATER_QUANTITY
 
 AGENCY = 'OSE-Roswell'
 
