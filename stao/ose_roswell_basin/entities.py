@@ -67,8 +67,10 @@ class CKANSTAO(BaseSTAO):
         return record
 
     def _get_blob(self):
-        url = f'{self.ckan_url}/datastore/dump/{self.resource_id}'
+        url = f'{self.ckan_url}datastore/dump/{self.resource_id}'
+        print(url)
         resp = requests.get(url)
+        print(resp)
         return resp.text
 
 
@@ -111,7 +113,7 @@ class OSERoswellThings(OSERoswellSTAO):
         properties = {'agency': AGENCY}
         name = record['site_id']
         location = self._client.get_location(f"name eq '{name}'")
-        payload = {'name': WATER_WELL,
+        payload = {'name': WATER_WELL['name'],
                    'description': NO_DESCRIPTION,
                    'properties': properties,
                    'Locations': [asiotid(location)],
@@ -128,7 +130,7 @@ class OSERoswellDatastreams(OSERoswellSTAO):
         if loc:
             lid = loc['@iot.id']
 
-            thing = self._client.get_thing(name=WATER_WELL, location=lid)
+            thing = self._client.get_thing(name=WATER_WELL['name'], location=lid)
             if thing:
                 obsprop = next(self._client.get_observed_properties(name=DTW_OBS_PROP['name']))
                 sensor = next(self._client.get_sensors(name=MANUAL_SENSOR['name']))
@@ -153,16 +155,17 @@ class OSERoswellDatastreams(OSERoswellSTAO):
 class OSERoswellObservations(OSERoswellSTAO, ObservationMixin):
     def _extract(self, request):
         def key(r):
+            print(r)
             return r['site_id']
 
         ds = list(self._get_dict_iter())
         for site_id, gs in groupby(sorted(ds, key=key), key=key):
-            yield {'site_id': site_id, 'observations': gs}
+            yield {'site_id': site_id, 'observations': list(gs)}
 
     def _transform(self, request, record):
         loc = self._client.get_location(name=record['site_id'])
         if loc:
-            thing = self._client.get_thing(name=WATER_WELL, location=loc['@iot.id'])
+            thing = self._client.get_thing(name=WATER_WELL['name'], location=loc['@iot.id'])
             if thing:
                 ds = self._client.get_datastream(name=GWL_DS['name'], thing=thing['@iot.id'])
 
@@ -170,7 +173,12 @@ class OSERoswellObservations(OSERoswellSTAO, ObservationMixin):
                 components = ['phenomenonTime', 'resultTime', 'result']
                 for obs in record['observations']:
                     da = obs['date'].split('T')[0]
-                    ti = obs['time'].split('T')[1]
+                    try:
+                        ti = obs['time'].split('T')[1]
+                    except IndexError:
+                        ti = '00:00:00'
+                    da = da.replace('/', '-')
+
                     t = f'{da}T{ti}.000Z'
                     v = obs['dtwgs']
                     try:
@@ -207,12 +215,13 @@ if __name__ == '__main__':
     #
     # c = Hondo()
     # c.render(None, dry=False)
-    resources = (('Roswell', '5f64d411-c281-491e-ae12-03280c248112'),
+    resources = (
+                ('Roswell', '75b89cfc-f28c-4b95-b477-09272a2e47d2'),
                  ('FTSumner', '3fa1cd2c-be33-4bba-a65b-bbc786dcbd39'),
-                 ('Hondo', 'ce18fbb9-296d-4b40-ba66-f81a061051ac'))
+                 ('Hondo', 'ce18fbb9-296d-4b40-ba66-f81a061051ac'),)
 
+    # dry = False
     dry = False
-    # dry = True
     for name, rid in resources:
         # c = OSERoswellLocations()
         # c = OSERoswellThings()
