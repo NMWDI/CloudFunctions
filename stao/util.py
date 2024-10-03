@@ -163,7 +163,7 @@ def make_total_records(client, dataset, table_name, objectid=None):
 #     return staclient
 
 def make_statime(t):
-    for fmt in ('%Y-%m-%dT%H:%M:%S.00Z', '%Y-%m-%dT%H:%M:%S.000Z'):
+    for fmt in ('%Y-%m-%dT%H:%M:%SZ', '%Y-%m-%dT%H:%M:%S.000Z'):
         try:
             st = datetime.datetime.strptime(t, fmt)
             st = st.replace(tzinfo=datetime.timezone.utc)

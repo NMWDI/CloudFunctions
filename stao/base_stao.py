@@ -154,7 +154,7 @@ class ObservationMixin:
 
                     def func(e):
                         tt = make_statime(e['phenomenonTime'])
-                        tt.replace(tzinfo=pytz.UTC)
+                        # tt.replace(tzinfo=pytz.UTC)
                         return tt, e['result']
 
                     eeobs = [func(e) for e in eobs]
