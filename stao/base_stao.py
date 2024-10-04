@@ -162,6 +162,7 @@ class ObservationMixin:
                     vs = []
                     duplicates = []
                     components = ['phenomenonTime', 'resultTime', 'result']
+
                     for obs in record['observations']:
                         # print(obs)
                         dt = obs[self._timestamp_field]
@@ -183,7 +184,8 @@ class ObservationMixin:
                         #     print(f'skipping already exists {t}, {v}')
                         #     continue
                         # if observation_exists(eobs, dt, v):
-                        for (dti, vi) in eeobs:
+                        ee = [e for e in eeobs if e[0] >= dt]
+                        for (dti, vi) in ee:
                             # print(vi, v)
                             # if v == vi:
                             #     if abs(dt-dti) < datetime.timedelta(days=1):
@@ -191,7 +193,7 @@ class ObservationMixin:
 
                             if dti == dt and v == vi:
                                 duplicates.append((t, v))
-                                print(f'assuming already exists {t}, {v}')
+                                # print(f'assuming already exists {t}, {v}')
                                 break
                         else:
                             vs.append((t, t, v))
@@ -453,11 +455,14 @@ class BQSTAO(BaseSTAO):
                             where = f"PARSE_TIMESTAMP('{fmt}', {self._cursor_id})>PARSE_TIMESTAMP('{fmt}', '{obj}')"
                         else:
                             if isinstance(obj, str):
-                                for fmt in ('%a, %d %b %Y %H:%M:%S. %Z', '%Y-%m-%dT%H:%M:%E6S%Ez',
+                                for fmt in ('%Y-%m-%dT%H:%M:%S.%f%z',
+                                            '%a, %d %b %Y %H:%M:%S. %Z',
+                                            '%Y-%m-%dT%H:%M:%E6S%Ez',
                                             '%Y-%m-%d %H:%M:%S'):
                                     try:
                                         _ = datetime.datetime.strptime(obj, fmt)
                                         where = f"{self._cursor_id}>=PARSE_TIMESTAMP('{fmt}', '{obj}')"
+                                        print('using where clause', where)
                                         break
                                     except ValueError as e:
                                         print('valueaesfd', e, self._cursor_id, obj)
