@@ -184,20 +184,25 @@ class ObservationMixin:
                         #     print(f'skipping already exists {t}, {v}')
                         #     continue
                         # if observation_exists(eobs, dt, v):
-                        ee = [e for e in eeobs if e[0] >= dt]
-                        print('checking existing obs', len(ee), dt)
-                        for (dti, vi) in ee:
-                            # print(vi, v)
-                            # if v == vi:
-                            #     if abs(dt-dti) < datetime.timedelta(days=1):
-                            #         print(dti, dt, dti-dt)
-
-                            if dti == dt and v == vi:
-                                duplicates.append((t, v))
-                                # print(f'assuming already exists {t}, {v}')
-                                break
+                        ee = [e for e in eeobs if e[0] == dt and e[1] == v]
+                        if ee:
+                            duplicates.append((t, v))
+                            continue
                         else:
                             vs.append((t, t, v))
+                        # print('checking existing obs', len(ee), dt)
+                        # for (dti, vi) in ee:
+                        #     # print(vi, v)
+                        #     # if v == vi:
+                        #     #     if abs(dt-dti) < datetime.timedelta(days=1):
+                        #     #         print(dti, dt, dti-dt)
+                        #
+                        #     if dti == dt and v == vi:
+                        #         duplicates.append((t, v))
+                        #         # print(f'assuming already exists {t}, {v}')
+                        #         break
+                        # else:
+                        #     vs.append((t, t, v))
 
                         # if (dt, v) in eeobs:
                         #     duplicates.append((t, v))
