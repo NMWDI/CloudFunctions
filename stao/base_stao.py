@@ -185,6 +185,7 @@ class ObservationMixin:
                         #     continue
                         # if observation_exists(eobs, dt, v):
                         ee = [e for e in eeobs if e[0] >= dt]
+                        print('checking existing obs', len(ee), dt)
                         for (dti, vi) in ee:
                             # print(vi, v)
                             # if v == vi:
@@ -455,18 +456,26 @@ class BQSTAO(BaseSTAO):
                             where = f"PARSE_TIMESTAMP('{fmt}', {self._cursor_id})>PARSE_TIMESTAMP('{fmt}', '{obj}')"
                         else:
                             if isinstance(obj, str):
-                                for fmt in ('%Y-%m-%dT%H:%M:%S.%f%z',
-                                            '%a, %d %b %Y %H:%M:%S. %Z',
-                                            '%Y-%m-%dT%H:%M:%E6S%Ez',
-                                            '%Y-%m-%d %H:%M:%S'):
-                                    try:
-                                        _ = datetime.datetime.strptime(obj, fmt)
-                                        where = f"{self._cursor_id}>=PARSE_TIMESTAMP('{fmt}', '{obj}')"
-                                        print('using where clause', where)
-                                        break
-                                    except ValueError as e:
-                                        print('valueaesfd', e, self._cursor_id, obj)
-                                        pass
+                                try:
+                                    fmt = '%Y-%m-%dT%H:%M:%S.%f%z'
+                                    dt = datetime.datetime.strptime(obj, fmt)
+
+                                    fmt = '%Y-%m-%d %H:%M:%S'
+                                    obj = dt.strftime(fmt)
+                                    where = f"{self._cursor_id}>=PARSE_TIMESTAMP('{fmt}', '{obj}')"
+                                    print('using where clause 1', where)
+                                except ValueError:
+                                    for fmt in ('%a, %d %b %Y %H:%M:%S. %Z',
+                                                '%Y-%m-%dT%H:%M:%E6S%Ez',
+                                                '%Y-%m-%d %H:%M:%S'):
+                                        try:
+                                            _ = datetime.datetime.strptime(obj, fmt)
+                                            where = f"{self._cursor_id}>=PARSE_TIMESTAMP('{fmt}', '{obj}')"
+                                            print('using where clause 2', where)
+                                            break
+                                        except ValueError as e:
+                                            print('valueaesfd', e, self._cursor_id, obj)
+                                            pass
 
                                 #Fri, 14 Jun 2024 01:04:51 GMT
                                 #%a, %d %b %Y %H:%M:%S %Z
