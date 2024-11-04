@@ -10,6 +10,8 @@ geojson
 numpy
 pytz
 httpx
+pandas
+openpyxl
 
 
 

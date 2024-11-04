@@ -22,6 +22,7 @@ from sta.definitions import FOOT, OM_Measurement
 from sta.util import statime
 
 from stao.base_stao import BucketSTAO, ObservationMixin, BaseSTAO
+from stao.ckan_stao import CKANResourceSTAO
 from stao.constants import ENCODING_GEOJSON, WATER_WELL, NO_DESCRIPTION, DTW_OBS_PROP, ELEV_OBS_PROP, MANUAL_SENSOR, \
     WATER_QUANTITY, GWL_DS, GWE_DS
 from stao.ose_roswell_basin.entities import CKANSTAO
@@ -41,41 +42,10 @@ from stao.util import make_geometry_point_from_latlon, copy_properties, asiotid
 AGENCY = 'CABQ'
 
 
-class CKANResourceSTAO(BaseSTAO):
-    resource_name = None
-    def _get_resources(self):
-        url = 'https://catalog.newmexicowaterdata.org/api/3/action/package_show?id=water-levels'
-        resp = httpx.get(url)
-        data = resp.json()
-        return data['result']['resources']
-
-    def _extract(self, request):
-        for resource in self._get_resources():
-            if resource['name'] != self.resource_name:
-                continue
-
-            records = self._get_resource_records(resource)
-            yield from self._extract_hook(records)
-
-        # for resource in self._get_resources():
-        #     records = self._get_resource_records(resource)
-        #
-                # yield from self._extract_hook(records)
-
-    def _get_resource_records(self, resource):
-        url = resource['url']
-        resp = httpx.get(url, follow_redirects=True)
-        data = resp.text
-
-        reader = csv.DictReader(data.split('\n'), delimiter=',')
-        return reader
-
-    def _extract_hook(self, records):
-        return records
-
 
 class CABQSTAO(CKANResourceSTAO):
-    resource_name = 'Well Construction'
+    dataset_names = 'Well Construction'
+    resource_id = '8770b6eb-a958-4f2e-a901-f64f38ef25e9'
 # class CABQSTAO(BucketSTAO):
 #     _blobs = [
 #               'cabq/COA_WaterLevels_All.txt',
@@ -94,7 +64,7 @@ class CABQSTAO(CKANResourceSTAO):
     #             reader = csv.DictReader(rfile, delimiter='\t')
     #             yield from self._extract_hook(reader)
 
-    def _extract_hook(self, records):
+    def _extract_hook(self, resource, records):
         yielded = []
         for row in records:
             name = row['sys_loc_code']
@@ -243,11 +213,11 @@ class CABQObservations(CABQSTAO, ObservationMixin):
     _attr = None
     _name = None
     resource_name = 'Water Levels'
-    def _extract_hook(self, reader):
+    def _extract_hook(self, resource, records):
         def key(r):
             return r['sys_loc_code']
 
-        for g, obs in groupby(sorted(reader, key=key), key=key):
+        for g, obs in groupby(sorted(records, key=key), key=key):
             obs = list(obs)
             yield {'sys_loc_code': g, 'observations': obs}
 
@@ -259,17 +229,17 @@ class CABQObservations(CABQSTAO, ObservationMixin):
                 ds = self._client.get_datastream(name=self._name, thing=thing['@iot.id'])
 
                 vs = []
-                components = ['phenomenonTime', 'resultTime', 'result']
+                components = ['phenomenonTime', 'resultTime', 'result', 'parameters']
                 # print('thiasd', ds)
                 for obs in record['observations']:
                     t = statime(obs['measurement_date'])
 
                     v = obs[self._attr]
-                    # parameters = {'measurement_method': obs['measurement_method'],
-                    #               'dry_indicator': obs['dry_indicator_yn'] }
+                    parameters = {'measurement_method': obs['measurement_method'],
+                                  'dry_indicator': obs['dry_indicator_yn'] }
                     try:
                         v = float(v)
-                        vs.append((t, t, v))
+                        vs.append((t, t, v, parameters))
                     except ValueError as e:
                         print(f'skipping. error={e}. v={v}, attr={self._attr}')
 

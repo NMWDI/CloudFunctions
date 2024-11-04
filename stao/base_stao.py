@@ -184,7 +184,7 @@ class ObservationMixin:
                         #     print(f'skipping already exists {t}, {v}')
                         #     continue
                         # if observation_exists(eobs, dt, v):
-                        ee = [e for e in eeobs if e[0] == dt and e[1] == v]
+                        ee = any(e[0] == dt and e[1] == v for e in eeobs)
                         if ee:
                             duplicates.append((t, v))
                             continue

@@ -21,6 +21,7 @@ from sta.definitions import FOOT, OM_Measurement
 from sta.util import statime
 
 from stao.base_stao import BaseSTAO, ObservationMixin
+from stao.ckan_stao import CKANSTAO
 from stao.constants import NO_DESCRIPTION, ENCODING_GEOJSON, WATER_WELL, DTW_OBS_PROP, MANUAL_SENSOR, WATER_QUANTITY, \
     GWL_DS
 from stao.util import make_geometry_point_from_latlon, asiotid
@@ -37,41 +38,6 @@ from stao.util import make_geometry_point_from_latlon, asiotid
 #         ELEV_OBS_PROP, GWE_DS, WATER_QUANTITY
 
 AGENCY = 'OSE-Roswell'
-
-
-class CKANSTAO(BaseSTAO):
-    resource_id = ''
-    ckan_url = ''
-    def _get_dict_iter(self):
-        blob = self._get_blob()
-        header = None
-
-        for line in blob.split('\n'):
-            line = line.strip()
-            if line:
-                line = line.split(',')
-
-                if not header:
-                    header = [h.lower() for h in line]
-                    continue
-                yield dict(zip(header, line))
-
-    def _extract(self, request):
-        yielded = []
-        for record in self._get_dict_iter():
-            record = self._extract_hook(yielded, record)
-            if record:
-                yield record
-
-    def _extract_hook(self, yielded, record):
-        return record
-
-    def _get_blob(self):
-        url = f'{self.ckan_url}datastore/dump/{self.resource_id}'
-        print(url)
-        resp = requests.get(url)
-        print(resp)
-        return resp.text
 
 
 class OSERoswellSTAO(CKANSTAO):
