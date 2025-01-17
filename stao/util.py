@@ -208,14 +208,15 @@ PROJECTIONS = {}
 
 def make_geometry_point_from_utm(e, n, zone=None, ellps=None, srid=None):
     if zone:
-        if zone in PROJECTIONS:
-            p = PROJECTIONS[zone]
-        else:
-            if ellps is None:
-                ellps = "WGS84"
+        if ellps is None:
+            ellps = "WGS84"
 
+        key = f"{zone}_{ellps}"
+        if key in PROJECTIONS:
+            p = PROJECTIONS[key]
+        else:
             p = pyproj.Proj(proj="utm", zone=int(zone), ellps=ellps)
-            PROJECTIONS[zone] = p
+            PROJECTIONS[key] = p
     elif srid:
         # get zone
         if srid in PROJECTIONS:
@@ -223,7 +224,7 @@ def make_geometry_point_from_utm(e, n, zone=None, ellps=None, srid=None):
             PROJECTIONS[srid] = p
         else:
             # p = pyproj.Proj(proj='utm', zone=int(zone), ellps='WGS84')
-            p = pyproj.Proj("EPSG:{}".format(srid))
+            p = pyproj.Proj(f"EPSG:{srid}")
 
     lon, lat = p(e, n, inverse=True)
     return make_geometry_point_from_latlon(lat, lon)
