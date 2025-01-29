@@ -104,7 +104,7 @@ class SanAcaciaReachObservations(ObservationMixin, VanEssenSTAO):
     _table_name_alias = 'MP'
     _fields = ['MP._airbyte_raw_id','L.name', 'monitoringPointID', 'ts', 'vrd']
     _join = 'nmwdi.vanessen_sanacacia_reach_monitoringpointlocations as L on L.id = monitoringPointID'
-
+    _limit = 5000
     _location_field = 'name'
     _value_field = 'vrd'
     _timestamp_field = 'ts'
@@ -191,6 +191,7 @@ if __name__ == '__main__':
     c = SanAcaciaReachObservations()
 
     c.render(None, dry=True)
+    # c.render({'MP._airbyte_raw_id': 'ffffb0bc-c0b6-4bf7-bcbd-02163380b916', 'limit': None, 'counter': 1}, dry=True)
     # c.render(None, dry=False)
 
 

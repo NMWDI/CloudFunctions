@@ -95,7 +95,7 @@ class ObservationMixin:
         records = [r for r in records if r[self._value_field] is not None]
         for g, obs in self._location_grouper(records):
             obs = list(obs)
-            t = max((o[self._cursor_id] for o in obs))
+            t = self._get_max_cursor(obs)
             if maxo:
                 maxo = max(maxo, t)
             else:
@@ -103,6 +103,13 @@ class ObservationMixin:
 
             yield {'locationId': g, 'observations': obs,
                    self._cursor_id: maxo}
+
+    def _get_max_cursor(self, obs):
+        cid = self._cursor_id
+        if '.' in cid:
+            cid = cid.split('.')[-1]
+
+        return max((o[cid] for o in obs))
 
     def _transform_value(self, v, record):
         return v
@@ -468,7 +475,7 @@ class BQSTAO(BaseSTAO):
                     where = f"{self._cursor_id}>{obj}"
                 elif self._cursor_id.endswith('_airbyte_raw_id'):
                     obj = state.get(self._cursor_id)
-                    where = f"{self._cursor_id}>{obj}"
+                    where = f"{self._cursor_id}>'{obj}'"
                 else:
                     obj = state.get(self._cursor_id)
                     if obj is not None:
