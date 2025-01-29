@@ -109,8 +109,8 @@ class SanAcaciaReachObservations(ObservationMixin, VanEssenSTAO):
     _value_field = 'vrd'
     _timestamp_field = 'ts'
 
-    _cursor_id = '_airbyte_raw_id'
-    _orderby = '_airbyte_raw_id asc'
+    _cursor_id = 'MP._airbyte_raw_id'
+    _orderby = 'MP._airbyte_raw_id asc'
 
     _datastream_name = GWL_DS['name']
 
