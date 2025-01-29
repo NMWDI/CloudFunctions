@@ -15,7 +15,7 @@
 # ===============================================================================
 from sta.definitions import FOOT, OM_Measurement
 from stao.constants import (WATER_WELL, HYDROVU_SENSOR, DTW_OBS_PROP,
-                            GWL_DS, WELL_LOCATION_DESCRIPTION, MANUAL_GWL_DS)
+                            GWL_DS, WELL_LOCATION_DESCRIPTION, MANUAL_GWL_DS, VAN_ESSEN_SENSOR)
 
 
 def tofloat(v):
@@ -110,6 +110,34 @@ PECOS_MANUAL = {
     'manual': MANUAL,
 }
 
+VAN_ESSEN = {'location': {'latitude': 'lat',
+                          'longitude': 'lng',
+                          'description': {'text': WELL_LOCATION_DESCRIPTION},
+                          'name': {'column': 'name',
+                                   # 'postprocess': clean_name
+                                   },
+                          'properties': {'source_id': 'uid',
+                                        'purpose': 'purpose'}},
+
+             'thing': {'name': {'text': WATER_WELL['name']},
+                       'description': {'text': WATER_WELL['description']},
+                       'properties': {'source_id': 'id',
+                                      'nmbgmr_id': 'name',
+                                      'location_id': 'locationID',
+                                      'well_depth': {'column': 'drillingDepth', 'postprocess': tofloat}
+                                      }
+                       },
+
+             'gwl': {'sensor': {'name': {'text': VAN_ESSEN_SENSOR['name']}},
+                     'observed_property': {'name': {'text': DTW_OBS_PROP['name']}},
+                     'unitOfMeasurement': {'text': FOOT},
+                     'observationType': {'text': OM_Measurement},
+                     'datastream': {'name': {'text': GWL_DS['name']},
+                                    'description': {'text': GWL_DS['description']}}}
+
+}
+
+
 
 class VocabMapper:
     def load(self, name):
@@ -120,6 +148,8 @@ class VocabMapper:
             vb = PECOS_MANUAL
         elif name == 'bernco':
             vb = BERNCO
+        elif name == 'van_essen':
+            vb = VAN_ESSEN
 
         self._vocab = vb
 

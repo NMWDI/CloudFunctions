@@ -48,7 +48,6 @@ LOCATION_IDS = {
 class PecosManualWaterLevelsObservations(ObservationMixin, BQSTAO):
     _agency = AGENCY
     _vocab_tag = 'pecos_manual'
-    _dataset = 'nmwdi'
     _tablename = 'pvacdmetermanager_WellMeasurements'
     _fields = ['_airbyte_extracted_at', 'id', 'value', 'unit_id', 'well_id', 'timestamp']
     _limit = 500
@@ -92,12 +91,10 @@ class PecosManualWaterLevelsObservations(ObservationMixin, BQSTAO):
 
 class PecosManualWaterlevelsDatastreams(BQSTAO, DatastreamMixin):
     _vocab_tag = 'pecos_manual'
-    _dataset = 'nmwdi'
     _tablename = 'pvacdmetermanager_Wells'
     _fields = ['id', 'name', 'osetag']
     _agency = AGENCY
     _where = 'id in (1524, 1521, 1517, 1522, 1520, 1518, 1519, 1515, 1516, 1523)'
-    _entity_tag = 'datastream'
 
     def _transform(self, request, record):
         record = dict(record)

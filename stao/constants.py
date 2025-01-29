@@ -76,6 +76,11 @@ ONERAIN_SENSOR = {'name': 'OneRain',
                   'encodingType': ENCODING_PDF,
                   'metadata': NO_METADATA}
 
+VAN_ESSEN_SENSOR = {'name': 'VanEssenDiver',
+                    'description': NO_DESCRIPTION,
+                    'encodingType': ENCODING_PDF,
+                    'metadata': NO_METADATA}
+
 GWL_DS = {'name': 'Groundwater Levels',
           'description': 'Measurement of groundwater depth in a water well, as measured below ground surface'}
 

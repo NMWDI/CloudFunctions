@@ -113,17 +113,24 @@ class ObservationMixin:
         return dt
 
     def _extract_timestamp(self, dt):
-        return dt / 1000
+        return int(dt / 1000)
 
-    def _transform(self, request, record):
-        # print('traceasdf', record)
+    def _get_thing_name(self, record):
+        return self._thing_name
 
+    def _get_thing(self,record, loc):
+        name = self._get_thing_name(record)
+        return self._client.get_thing(name=name, location=loc['@iot.id'])
+
+    def _get_datastream(self, request, record):
         loc, locationId = self._get_location(record)
         if not loc:
             print(f'******* no location {locationId}')
         else:
+            self._location = loc
             try:
-                thing = self._client.get_thing(name=self._thing_name, location=loc['@iot.id'])
+                thing = self._get_thing(record, loc)
+                self._thing = thing
             except StopIteration:
                 print(f'********* no thing for location {locationId}, thing={self._thing_name}, location={loc}')
                 return
@@ -133,92 +140,93 @@ class ObservationMixin:
 
             else:
                 try:
-                    ds = self._client.get_datastream(name=self._datastream_name, thing=thing['@iot.id'])
+                    return self._client.get_datastream(name=self._datastream_name, thing=thing['@iot.id'])
                 except StopIteration:
                     print(f'********* no datastream for location {locationId}, datastream={self._datastream_name}, '
                           f'thing={thing}')
                     return
 
-                if ds:
-                    self._thing = thing
-                    self._datastream = ds
-                    self._location = loc
-                    eobs = self._client.get_observations(ds,
-                                                         # limit=2000,
-                                                         # pages=1,
-                                                         verbose=False,
-                                                         orderby='phenomenonTime desc')
-                    eobs = list(eobs)
+    def _transform(self, request, record):
+        # print('traceasdf', record)
+        ds = self._get_datastream(request, record)
+        if ds:
+            self._datastream = ds
+            eobs = self._client.get_observations(ds,
+                                                 # limit=2000,
+                                                 # pages=1,
+                                                 verbose=False,
+                                                 orderby='phenomenonTime desc')
+            eobs = list(eobs)
 
-                    print(f'existing obs={len(eobs)} datastream={ds} ')
+            print(f'existing obs={len(eobs)} datastream={ds} ')
 
-                    def func(e):
-                        tt = make_statime(e['phenomenonTime'])
-                        # tt.replace(tzinfo=pytz.UTC)
-                        return tt, e['result']
+            def func(e):
+                tt = make_statime(e['phenomenonTime'])
+                # tt.replace(tzinfo=pytz.UTC)
+                return tt, e['result']
 
-                    eeobs = [func(e) for e in eobs]
+            eeobs = [func(e) for e in eobs]
 
-                    vs = []
-                    duplicates = []
-                    components = ['phenomenonTime', 'resultTime', 'result']
+            vs = []
+            duplicates = []
+            components = ['phenomenonTime', 'resultTime', 'result']
 
-                    for obs in record['observations']:
-                        # print(obs)
-                        dt = obs[self._timestamp_field]
-                        dt = self._extract_timestamp(dt)
-                        if not dt:
-                            print(f'skipping invalid datetime. {dt}')
-                            continue
-                        dt = self._transform_timestamp(dt)
-                        # if not last_obs or (last_obs and dt > last_obs):
-                        t = dt.strftime('%Y-%m-%dT%H:%M:%S.000Z')
-                        v = obs[self._value_field]
-                        try:
-                            v = float(v)
-                            v = self._transform_value(v, obs)
-                        except (TypeError, ValueError) as e:
-                            print(f'skipping. error={e}. v={v}')
+            for obs in record['observations']:
+                # print(obs)
+                dt = obs[self._timestamp_field]
+                dt = self._extract_timestamp(dt)
+                if not dt:
+                    print(f'skipping invalid datetime. {dt}')
+                    continue
+                dt = self._transform_timestamp(dt)
+                # if not last_obs or (last_obs and dt > last_obs):
+                t = dt.strftime('%Y-%m-%dT%H:%M:%S.000Z')
+                v = obs[self._value_field]
+                try:
+                    v = float(v)
+                    v = self._transform_value(v, obs)
+                except (TypeError, ValueError) as e:
+                    print(f'skipping. error={e}. v={v}')
 
-                        # if self._client.get_observation(t, v):
-                        #     print(f'skipping already exists {t}, {v}')
-                        #     continue
-                        # if observation_exists(eobs, dt, v):
-                        ee = any(e[0] == dt and e[1] == v for e in eeobs)
-                        if ee:
-                            duplicates.append((t, v))
-                            continue
-                        else:
-                            vs.append((t, t, v))
-                        # print('checking existing obs', len(ee), dt)
-                        # for (dti, vi) in ee:
-                        #     # print(vi, v)
-                        #     # if v == vi:
-                        #     #     if abs(dt-dti) < datetime.timedelta(days=1):
-                        #     #         print(dti, dt, dti-dt)
-                        #
-                        #     if dti == dt and v == vi:
-                        #         duplicates.append((t, v))
-                        #         # print(f'assuming already exists {t}, {v}')
-                        #         break
-                        # else:
-                        #     vs.append((t, t, v))
+                # if self._client.get_observation(t, v):
+                #     print(f'skipping already exists {t}, {v}')
+                #     continue
+                # if observation_exists(eobs, dt, v):
+                ee = any(e[0] == dt and e[1] == v for e in eeobs)
+                if ee:
+                    duplicates.append((t, v))
+                    continue
+                else:
+                    vs.append((t, t, v))
+                # print('checking existing obs', len(ee), dt)
+                # for (dti, vi) in ee:
+                #     # print(vi, v)
+                #     # if v == vi:
+                #     #     if abs(dt-dti) < datetime.timedelta(days=1):
+                #     #         print(dti, dt, dti-dt)
+                #
+                #     if dti == dt and v == vi:
+                #         duplicates.append((t, v))
+                #         # print(f'assuming already exists {t}, {v}')
+                #         break
+                # else:
+                #     vs.append((t, t, v))
 
-                        # if (dt, v) in eeobs:
-                        #     duplicates.append((t, v))
-                        #     # print(f'assuming already exists {t}, {v}')
-                        #     continue
+                # if (dt, v) in eeobs:
+                #     duplicates.append((t, v))
+                #     # print(f'assuming already exists {t}, {v}')
+                #     continue
 
-                    if duplicates:
-                        print(f'found {len(duplicates)} duplicates')
-                        print(duplicates)
+            if duplicates:
+                print(f'found {len(duplicates)} duplicates')
+                print(duplicates)
 
-                    if vs:
-                        payload = {'Datastream': asiotid(ds),
-                                   'observations': vs,
-                                   'components': components}
-                        print('------------- payload', payload)
-                        return payload
+            if vs:
+                payload = {'Datastream': asiotid(ds),
+                           'observations': vs,
+                           'components': components}
+                print('------------- payload', payload)
+                return payload
 
 
 class STAO:
@@ -353,12 +361,15 @@ class BaseSTAO(STAO):
         for i, record in enumerate(records):
             print(f'transform record {i} {self._transform_message(record)}')
             payloads = self._transform(request, record)
-            print('payloads', payloads)
+            # print('payloads', payloads)
             if payloads:
                 if not isinstance(payloads, (tuple, list)):
                     payloads = (payloads,)
 
                 for payload in payloads:
+                    print('--- loading')
+                    print(payload)
+                    print('-------------')
                     self._load_record(payload, dry)
                     cnt += 1
             else:
@@ -419,16 +430,18 @@ class BQSTAO(BaseSTAO):
     BiqQuery STAO.
 
     use to extract data from a BiqQuery (BQ) dataset.
+    _dataset: str    The name of the BQ dataset
 
     subclasses must define
     _fields: list    Explicit list of column names
-    _dataset: str    The name of the BQ dataset
     _tablename: str  The name of the BQ table
     """
 
+    _dataset = 'nmwdi'
+
     _fields = None
-    _dataset = None
     _tablename = None
+    _table_name_alias = None
 
     _where = None
     _orderby = None
@@ -510,7 +523,7 @@ class BQSTAO(BaseSTAO):
 
         print('where {} {}'.format(where, self._limit))
         return self._handle_extract(self._get_bq_items(self._fields, self._dataset, self._tablename,
-                                                       where=where, join=join))
+                                                       where=where, join=join, table_name_alias=self._table_name_alias))
 
     def _bq_query(self, sql, **kw):
         client = bigquery.Client(
@@ -520,9 +533,12 @@ class BQSTAO(BaseSTAO):
         job = client.query(sql, **kw)
         return job.result()
 
-    def _get_bq_items(self, fields, dataset, tablename, where=None, join=None):
+    def _get_bq_items(self, fields, dataset, tablename, where=None, join=None, table_name_alias=None):
         fs = ','.join(fields)
         sql = f'select {fs} from {dataset}.{tablename}'
+
+        if table_name_alias:
+            sql = f'{sql} as {table_name_alias}'
 
         if join:
             sql = f'{sql} {join} '
@@ -542,6 +558,8 @@ class BQSTAO(BaseSTAO):
 
 
 class DatastreamMixin:
+    _entity_tag = 'datastream'
+
     def _make_datastream_payload(self, record, tag, agency, thing=None):
         if thing is None:
             thing = self._get_thing(record, agency)
@@ -566,6 +584,7 @@ class DatastreamMixin:
         print('get thing', record)
         name = self.toST('location.name', record)
         q = f"name eq '{name}' and properties/agency eq '{agency}'"
+        print(q)
         loc = self._client.get_location(query=q)
         if not loc:
             print(f'------------ failed locating {name}')
@@ -576,33 +595,62 @@ class DatastreamMixin:
 
 
 class ThingMixin:
-    def _make_thing_payload(self, record):
+    _entity_tag = 'thing'
+
+    def _transform(self, request, record):
+        payload = self._make_thing_payload(record)
+        return payload
+
+    def _get_location(self, record):
         name = self.toST('location.name', record)
         location = self._client.get_location(f"name eq '{name}'")
+        return location
+
+    def _make_thing_payload(self, record):
+        location = self._get_location(record)
         payload = {}
         if location:
+            properties = self._make_thing_properties(record)
+            properties['agency'] = self._agency
+
             payload = {'name': self.toST('thing.name', record),
                        'Locations': [{'@iot.id': location['@iot.id']}],
                        'description': self.toST('thing.description', record),
-                       }
+                          'properties': properties
+                          }
         return payload
+
+    def _make_thing_properties(self, record):
+        raise NotImplementedError
 
 
 class LocationMixin:
     _entity_tag = 'location'
+
+    def _transform(self, request, record):
+        payload = self._make_location_payload(record)
+        return payload
+
     def _make_location_payload(self, record):
         lat = self.toST('location.latitude', record)
         lon = self.toST('location.longitude', record)
 
         elevation = self._get_elevation(record)
 
+        properties = self._make_location_properties(record)
+        properties['agency'] = self._agency
+
         payload = {'name': self.toST('location.name', record),
                    'description': self.toST('location.description', record),
                    'location': make_geometry_point_from_latlon(lat, lon, elevation),
                    "encodingType": "application/vnd.geo+json",
+                   "properties": properties
                    }
+
         return payload
 
+    def _make_location_properties(self, record):
+        return {}
 
 class LocationGeoconnexMixin:
     """

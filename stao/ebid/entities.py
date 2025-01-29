@@ -45,7 +45,6 @@ class EBID_Site_STAO(BQSTAO):
                'cast(longitude_dec as FLOAT64) as longitude_dec',
                '(cast(reference as FLOAT64)/3.28084) as reference']
     _join = 'nmwdi.ebid_get_sensor_meta_data as s on site.or_site_id=s.or_site_id'
-    _dataset = 'nmwdi'
     _tablename = 'ebid_get_site_meta_data as site'
 
     _limit = 100
@@ -147,7 +146,6 @@ class EBIDWellDatastreams(EBID_Well_Site_STAO):
 
 
 class EBIDGWLObservations(ObservationMixin, BQSTAO):
-    _dataset = 'nmwdi'
     _tablename = 'ebid_get_sensor_data as data'
     _fields = ['data_time',
                'or_sensor_id', 'data_value', 'or_site_id',]

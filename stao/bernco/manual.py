@@ -29,7 +29,6 @@ class SiteSTAO(BQSTAO):
     _fields = ['name', 'latitude', 'longitude', 'point_id', 'ose_permit', 'well_depth', 'aquifer_code',
                'casing_stickup', 'screen_interval', 'well_uuid', 'objectid']
 
-    _dataset = 'nmwdi'
     _tablename = 'bernco_arcgis_wells'
 
     _limit = 500
@@ -41,16 +40,25 @@ class SiteSTAO(BQSTAO):
 
 class BernCoLocations(LocationGeoconnexMixin, LocationMixin, SiteSTAO):
 
-    def _transform(self, request, record):
-        payload = self._make_location_payload(record)
+    def _make_location_properties(self, record):
         source_id = self.toST('location.properties.source_id', record)
+        properties = {
+            'source_id': source_id,
+                                         'nmbgmr_id': self.toST('location.properties.nmbgmr_id', record),
+                                         'ose_permit': self.toST('location.properties.ose_permit', record),
+        }
+        return properties
 
-        payload['properties'] = {'agency': AGENCY,
-                                 'source_id': source_id,
-                                 'nmbgmr_id': self.toST('location.properties.nmbgmr_id', record),
-                                 'ose_permit': self.toST('location.properties.ose_permit', record), }
-
-        return payload
+    # def _transform(self, request, record):
+    #     payload = self._make_location_payload(record)
+    #     source_id = self.toST('location.properties.source_id', record)
+    #
+    #     payload['properties'] = {'agency': AGENCY,
+    #                              'source_id': source_id,
+    #                              'nmbgmr_id': self.toST('location.properties.nmbgmr_id', record),
+    #                              'ose_permit': self.toST('location.properties.ose_permit', record), }
+    #
+    #     return payload
 
 
 class BernCoThings(SiteSTAO):
@@ -78,7 +86,6 @@ class BernCoThings(SiteSTAO):
 
 
 class BernCoWellDatastreams(DatastreamMixin, SiteSTAO):
-    _entity_tag = 'datastream'
 
     def _transform(self, request, record):
         payload = self._make_datastream_payload(record, 'manual', AGENCY)
@@ -86,8 +93,6 @@ class BernCoWellDatastreams(DatastreamMixin, SiteSTAO):
 
 
 class BernCoManualGWLObservations(ObservationMixin, BQSTAO):
-    _dataset = 'nmwdi'
-    _entity_tag = 'observation'
     _tablename = 'bernco_arcgis_manual_waterlevels as data'
     _fields = ['id', 'well_uuid', 'measurement_date', 'measurement_method', 'depth_to_water_at_measurement_point']
     _limit = 500

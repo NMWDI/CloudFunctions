@@ -20,7 +20,7 @@ main.py.  This module holds all the cloud function entry points.
 import os
 
 from stao.constants import NO_DESCRIPTION, MANUAL_SENSOR, DTW_OBS_PROP, PRESSURE_SENSOR, ACOUSTIC_SENSOR, \
-    TOTALIZER_OBSERVED_PROPERTIES, TOTALIZER_SENSOR, HYDROVU_SENSOR
+    TOTALIZER_OBSERVED_PROPERTIES, TOTALIZER_SENSOR, HYDROVU_SENSOR, VAN_ESSEN_SENSOR
 from stao.base_stao import SimpleSTAO
 
 
@@ -50,8 +50,35 @@ try:
 except ImportError as e:
     print('sentry not enabled', e)
 
-# ======================== bernco ===========================
+# ======================== sanacacia reach ==================
+def sanacacia_locations(request):
+    from stao.sanacaciareach_vanessen.entities import SanAcaciaReachLocations
+    stao = SanAcaciaReachLocations()
+    return stao.render(request)
 
+
+def sanacacia_things(request):
+    from stao.sanacaciareach_vanessen.entities import SanAcaciaReachThings
+    stao = SanAcaciaReachThings()
+    return stao.render(request)
+
+
+def sanacacia_datastreams(request):
+    from stao.sanacaciareach_vanessen.entities import SanAcaciaReachDatastreams
+    ss = SimpleSTAO()
+    ss.render('sensor', VAN_ESSEN_SENSOR)
+
+    stao = SanAcaciaReachDatastreams()
+    return stao.render(request)
+
+
+def sanacacia_water_levels(request):
+    from stao.sanacaciareach_vanessen.entities import SanAcaciaReachObservations
+    stao = SanAcaciaReachObservations()
+    return stao.render(request)
+
+
+# ======================== bernco ===========================
 def bernco_manual_water_levels(request):
     from stao.bernco.manual import BernCoManualGWLObservations
     stao = BernCoManualGWLObservations()

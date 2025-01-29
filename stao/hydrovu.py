@@ -44,7 +44,6 @@ class HydroVu_Site_STAO(BQSTAO):
 
     _fields = ['id', 'name', 'latitude', 'longitude', 'description']
 
-    _dataset = 'nmwdi'
     _limit = 100
     _orderby = 'id asc'
 
@@ -58,35 +57,46 @@ class HydroVu_Site_STAO(BQSTAO):
 class HydroVuLocations(LocationGeoconnexMixin, HydroVu_Site_STAO, LocationMixin):
     _entity_tag = 'location'
 
-    def _transform(self, request, record):
-        payload = self._make_location_payload(record)
-
+    def _make_location_properties(self, record):
         source_id = self.toST('location.properties.source_id', record)
         hvd = self.toST('location.properties.hydrovu_description', record)
-        payload['properties'] = {'agency': self._agency,
-                                 'source_id': source_id,
-                                 'hydrovu.description': hvd}
-        return payload
+        properties = {'source_id': source_id,'hydrovu.description': hvd}
+        return properties
+
+    # def _transform(self, request, record):
+    #     payload = self._make_location_payload(record)
+    #
+    #     source_id = self.toST('location.properties.source_id', record)
+    #     hvd = self.toST('location.properties.hydrovu_description', record)
+    #     payload['properties'] = {'agency': self._agency,
+    #                              'source_id': source_id,
+    #                              'hydrovu.description': hvd}
+    #     return payload
 
 
 class HydroVuThings(HydroVu_Site_STAO, ThingMixin):
     _entity_tag = 'thing'
 
-    def _transform(self, request, record):
-        payload = self._make_thing_payload(record)
+    def _make_thing_properties(self, record):
+        properties = {
+            'source_id': self.toST('thing.properties.source_id', record),
+        }
+        properties.update(**self._additional_properties(record))
+        return properties
 
-        props = {'agency': self._agency,
-                 'source_id': self.toST('thing.properties.source_id', record)}
-
-        props.update(**self._additional_properties(record))
-        payload['properties'] = props
-
-        return payload
+    # def _transform(self, request, record):
+    #     payload = self._make_thing_payload(record)
+    #
+    #     props = {'agency': self._agency,
+    #              'source_id': self.toST('thing.properties.source_id', record)}
+    #
+    #     props.update(**self._additional_properties(record))
+    #     payload['properties'] = props
+    #
+    #     return payload
 
 
 class HydroVuWaterLevelsDatastreams(HydroVu_Site_STAO, DatastreamMixin):
-    _entity_tag = 'datastream'
-
     def _transform(self, request, record):
         payload = self._make_datastream_payload(record, 'gwl', self._agency)
         payload['properties'] = {}
@@ -100,7 +110,6 @@ class HydroVuObservations(ObservationMixin, BQSTAO):
     _limit = 500
     _where = "parameterId=4"
 
-    _dataset = 'nmwdi'
     _entity_tag = 'observation'
 
     _orderby = '_airbyte_extracted_at asc'
