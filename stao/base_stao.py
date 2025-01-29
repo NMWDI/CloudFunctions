@@ -466,6 +466,9 @@ class BQSTAO(BaseSTAO):
                 if self._cursor_id in ('OBJECTID', 'id'):
                     obj = int(state.get(self._cursor_id))
                     where = f"{self._cursor_id}>{obj}"
+                elif self._cursor_id in ('_airbyte_raw_id',):
+                    obj = state.get(self._cursor_id)
+                    where = f"{self._cursor_id}>{obj}"
                 else:
                     obj = state.get(self._cursor_id)
                     if obj is not None:
