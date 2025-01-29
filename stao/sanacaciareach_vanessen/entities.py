@@ -127,7 +127,7 @@ class SanAcaciaReachObservations(ObservationMixin, VanEssenSTAO):
 
         if thing:
             try:
-                return self._client.get_datastream(thing['@iot.id'], name=GWL_DS['name'])
+                return self._client.get_datastream(thing=thing['@iot.id'], name=GWL_DS['name'])
             except StopIteration:
                 print("not datastream found for ", name)
                 return
