@@ -14,6 +14,7 @@
 # limitations under the License.
 # ===============================================================================
 import csv
+import json
 
 import httpx
 
@@ -62,7 +63,12 @@ class CKANResourceSTAO(BaseSTAO):
     def _get_datasets(self):
         url = f'https://catalog.newmexicowaterdata.org/api/3/action/package_show?id={self.resource_id}'
         resp = httpx.get(url)
-        data = resp.json()
+        try:
+            data = resp.json()
+        except json.JSONDecodeError:
+            print(resp.url, resp.text)
+            return []
+
         return data['result']['resources']
 
     def _extract(self, request):
