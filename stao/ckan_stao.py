@@ -62,7 +62,7 @@ class CKANResourceSTAO(BaseSTAO):
 
     def _get_datasets(self):
         url = f'https://catalog.newmexicowaterdata.org/api/3/action/package_show?id={self.resource_id}'
-        resp = httpx.get(url)
+        resp = httpx.get(url, follow_redirects=True)
         try:
             data = resp.json()
         except json.JSONDecodeError:
