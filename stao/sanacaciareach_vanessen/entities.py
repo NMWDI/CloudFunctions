@@ -15,6 +15,7 @@
 # ===============================================================================
 import csv
 import urllib.request
+from datetime import datetime
 from io import BytesIO
 from itertools import groupby
 
@@ -104,7 +105,7 @@ class SanAcaciaReachObservations(ObservationMixin, VanEssenSTAO):
     _table_name_alias = 'MP'
     _fields = ['MP._airbyte_raw_id','L.name', 'monitoringPointID', 'ts', 'vrd']
     _join = 'nmwdi.vanessen_sanacacia_reach_monitoringpointlocations as L on L.id = monitoringPointID'
-    _limit = 5000
+    _limit = 10
     _location_field = 'name'
     _value_field = 'vrd'
     _timestamp_field = 'ts'
@@ -113,6 +114,11 @@ class SanAcaciaReachObservations(ObservationMixin, VanEssenSTAO):
     _orderby = 'MP._airbyte_raw_id asc'
 
     _datastream_name = GWL_DS['name']
+
+    _ground_surface_elevation = None
+    def __init__(self):
+        super(SanAcaciaReachObservations, self).__init__()
+        self._ground_surface_elevation = {}
 
     def _extract_timestamp(self, dt):
         return int(dt)
@@ -125,12 +131,45 @@ class SanAcaciaReachObservations(ObservationMixin, VanEssenSTAO):
             print("not thing found for ", name)
             return
 
+        # get the ground surface elevation and store in a cache
+
+
         if thing:
             try:
                 return self._client.get_datastream(thing=thing['@iot.id'], name=GWL_DS['name'])
             except StopIteration:
                 print("not datastream found for ", name)
                 return
+
+    def _transform_value(self, v, record):
+        gse = self._get_ground_surface_elevation(record)
+
+        # convert mm to feet
+        return (gse-v) * 0.00328084
+
+    def _get_ground_surface_elevation(self, record):
+        mid = record['monitoringPointID']
+        ts = record['ts']
+        ts = datetime.fromtimestamp(int(ts)).strftime('%Y-%m-%dT%H:%M:%S')
+
+        if mid in self._ground_surface_elevation:
+            gse, fromDate = self._ground_surface_elevation[mid]
+            if fromDate < ts:
+                return gse
+
+        sql = f'''select fromDate, elevation from nmwdi.vanessen_sanacacia_reach_groundsurfacedata 
+        where monitoringPointID={mid} and fromDate<="{ts}" 
+        order by fromDate desc'''
+
+        results = self._bq_query(sql)
+        if results:
+            r = next(results)
+            gse = float(r['elevation'])
+            fromDate = r['fromDate']
+            self._ground_surface_elevation[mid] = (gse, fromDate)
+            return gse
+
+
 
     # def _get_thing_name(self, record):
     #     return f"Groundwater Level Monitoring Point - {record['name']}"
@@ -190,9 +229,10 @@ if __name__ == '__main__':
     # c = SanAcaciaReachDatastreams()
     c = SanAcaciaReachObservations()
 
-    c.render(None, dry=True)
+    # c.render(None, dry=True)
     # c.render({'MP._airbyte_raw_id': 'ffffb0bc-c0b6-4bf7-bcbd-02163380b916', 'limit': None, 'counter': 1}, dry=True)
     # c.render(None, dry=False)
+    c.render(None, dry=True)
 
 
     # c = EBWPCLocations()
