@@ -143,9 +143,8 @@ class SanAcaciaReachObservations(ObservationMixin, VanEssenSTAO):
 
     def _transform_value(self, v, record):
         gse = self._get_ground_surface_elevation(record)
-
-        # convert mm to feet
-        return (gse-v) * 0.00328084
+        # convert cm to feet
+        return (gse-v) * 0.0328084
 
     def _get_ground_surface_elevation(self, record):
         mid = record['monitoringPointID']
@@ -226,13 +225,13 @@ if __name__ == '__main__':
 
     # c = SanAcaciaReachLocations()
     # c = SanAcaciaReachThings()
-    # c = SanAcaciaReachDatastreams()
-    c = SanAcaciaReachObservations()
+    c = SanAcaciaReachDatastreams()
+    # c = SanAcaciaReachObservations()
 
     # c.render(None, dry=True)
     # c.render({'MP._airbyte_raw_id': 'ffffb0bc-c0b6-4bf7-bcbd-02163380b916', 'limit': None, 'counter': 1}, dry=True)
     # c.render(None, dry=False)
-    c.render(None, dry=True)
+    c.render(None, dry=False)
 
 
     # c = EBWPCLocations()
