@@ -105,7 +105,7 @@ class SanAcaciaReachObservations(ObservationMixin, VanEssenSTAO):
     _table_name_alias = 'MP'
     _fields = ['MP._airbyte_raw_id','L.name', 'monitoringPointID', 'ts', 'vrd']
     _join = 'nmwdi.vanessen_sanacacia_reach_monitoringpointlocations as L on L.id = monitoringPointID'
-    _limit = 10
+    _limit = 5000
     _location_field = 'name'
     _value_field = 'vrd'
     _timestamp_field = 'ts'
