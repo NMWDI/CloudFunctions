@@ -130,6 +130,7 @@ class ObservationMixin:
         return self._client.get_thing(name=name, location=loc['@iot.id'])
 
     def _get_datastream(self, request, record):
+        print(record)
         loc, locationId = self._get_location(record)
         if not loc:
             print(f'******* no location {locationId}')
@@ -153,9 +154,12 @@ class ObservationMixin:
                           f'thing={thing}')
                     return
 
+    def _get_timestamp(self, obs):
+        return obs[self._timestamp_field]
+
     def _transform(self, request, record):
-        # print('traceasdf', record)
         ds = self._get_datastream(request, record)
+        print('asdfasdfasdfasfas', ds)
         if ds:
             self._datastream = ds
             eobs = self._client.get_observations(ds,
@@ -180,12 +184,18 @@ class ObservationMixin:
 
             for obs in record['observations']:
                 # print(obs)
-                dt = obs[self._timestamp_field]
+
+                dt = self._get_timestamp(obs)
                 dt = self._extract_timestamp(dt)
                 if not dt:
                     print(f'skipping invalid datetime. {dt}')
                     continue
                 dt = self._transform_timestamp(dt)
+
+                if not dt:
+                    print(f'skipping invalid datetime. {dt}')
+                    continue
+
                 # if not last_obs or (last_obs and dt > last_obs):
                 t = dt.strftime('%Y-%m-%dT%H:%M:%S.000Z')
                 v = obs[self._value_field]
@@ -232,7 +242,8 @@ class ObservationMixin:
                 payload = {'Datastream': asiotid(ds),
                            'observations': vs,
                            'components': components}
-                print('------------- payload', payload)
+                if len(vs)< 100:
+                    print('------------- payload', payload)
                 return payload
 
 
@@ -374,9 +385,9 @@ class BaseSTAO(STAO):
                     payloads = (payloads,)
 
                 for payload in payloads:
-                    print('--- loading')
-                    print(payload)
-                    print('-------------')
+                    # print('--- loading')
+                    # print(payload)
+                    # print('-------------')
                     self._load_record(payload, dry)
                     cnt += 1
             else:
@@ -410,7 +421,7 @@ class BaseSTAO(STAO):
         :param dry:
         :return: returns the pysta object representing the ST entity added to the server
         """
-        print('loading record', payload, dry)
+        # print('loading record', payload, dry)
         clt = self._client
 
         if hasattr(self, '_get_load_function_name'):
@@ -722,4 +733,54 @@ class BucketSTAO(BaseSTAO):
         """
 
         return jobj
+
+
+class MultifileBucketSTAO(BaseSTAO):
+    _bucket_name = 'waterdatainitiative'
+
+    def render(self, request, dry=False):
+        """
+
+        :param request: Request object passed in by the CloudFunction trigger
+        :param dry: optional keyword for testing.  dry=False goes through the motions but does not send POSTs to the
+        ST server
+        :return: dict.  return the STAOs state
+        """
+
+        if request:
+            if isinstance(request, dict):
+                self.state = request
+            elif request.json:
+                self.state = request.json
+
+        for data in self._get_extracted_data():
+            self._load(request, data, dry)
+
+        return self.state
+
+    def _get_bucket(self):
+        """
+        helper function to grab a bucket from GCS
+        :return:
+        """
+        if not self._bucket_name:
+            raise NotImplementedError
+
+        client = storage.Client()
+        return client.get_bucket(self._bucket_name)
+
+    def _get_extracted_data(self):
+        bucket = self._get_bucket()
+        blobs = bucket.list_blobs()
+        for blob in blobs:
+            print(f'extracting {blob.name}')
+            yield self._handle_extract(blob.download_as_bytes())
+
+    def _handle_extract(self, blobcontent):
+        """
+        :param jobj:
+        :return: JSON object
+        """
+
+        return blobcontent
 # ============= EOF =============================================

@@ -92,7 +92,9 @@ class SanAcaciaReachDatastreams(DatastreamMixin, VanEssenSTAO):
     def _transform(self, request, record):
         payload = self._make_datastream_payload(record, 'gwl', self._agency)
         payload['properties'] = {'topic': WATER_QUANTITY,
-                                 'agency': self._agency}
+                                 'agency': self._agency,
+                                 'is_continuous': True,
+                                 'is_provisional': True}
         return payload
 
     def _get_thing(self, record, agency):

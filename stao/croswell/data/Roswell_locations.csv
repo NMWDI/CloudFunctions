@@ -1,0 +1,2 @@
+site_id,y_coord,x_coord,coordinate_system,county,well_depth,well_depth_unit,casing_diameter,casing_diameter_unit,primary_use,ose_pod_id
+18,33.29592,-104.58409,decimal degrees,Chaves,850,ft,16,in,public supply,RA-4253S

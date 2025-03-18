@@ -15,7 +15,7 @@
 # ===============================================================================
 from sta.definitions import FOOT, OM_Measurement
 from stao.constants import (WATER_WELL, HYDROVU_SENSOR, DTW_OBS_PROP,
-                            GWL_DS, WELL_LOCATION_DESCRIPTION, MANUAL_GWL_DS, VAN_ESSEN_SENSOR)
+                            GWL_DS, WELL_LOCATION_DESCRIPTION, MANUAL_GWL_DS, VAN_ESSEN_SENSOR, BUBBLER_SENSOR)
 
 
 def tofloat(v):
@@ -137,7 +137,33 @@ VAN_ESSEN = {'location': {'latitude': 'lat',
 
 }
 
+CITY_OF_ROSWELL = {'location': {'latitude': 'y_coord',
+                          'longitude': 'x_coord',
+                          'description': {'text': WELL_LOCATION_DESCRIPTION},
+                          'name': {'column': 'site_id',
+                                   'postprocess': lambda x: f'Site-{x}'
+                                   },
+                          # 'properties': {'source_id': 'uid',
+                          #                'purpose': 'purpose'}
+                                },
 
+             'thing': {'name': {'text': WATER_WELL['name']},
+                       'description': {'text': WATER_WELL['description']},
+                       'properties': {'source_id': 'id',
+                                      'nmbgmr_id': 'name',
+                                      'location_id': 'locationID',
+                                      'well_depth': {'column': 'drillingDepth', 'postprocess': tofloat}
+                                      }
+                       },
+
+             'gwl': {'sensor': {'name': {'text': BUBBLER_SENSOR['name']}},
+                     'observed_property': {'name': {'text': DTW_OBS_PROP['name']}},
+                     'unitOfMeasurement': {'text': FOOT},
+                     'observationType': {'text': OM_Measurement},
+                     'datastream': {'name': {'text': GWL_DS['name']},
+                                    'description': {'text': GWL_DS['description']}}}
+
+             }
 
 class VocabMapper:
     def load(self, name):
@@ -150,7 +176,8 @@ class VocabMapper:
             vb = BERNCO
         elif name == 'van_essen':
             vb = VAN_ESSEN
-
+        elif name == 'city_of_roswell':
+            vb = CITY_OF_ROSWELL
         self._vocab = vb
 
     def toST(self, path, record=None, default=None):

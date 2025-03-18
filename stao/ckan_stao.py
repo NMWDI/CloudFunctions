@@ -59,6 +59,7 @@ class CKANSTAO(BaseSTAO):
 class CKANResourceSTAO(BaseSTAO):
     dataset_names = None
     resource_id = None
+    excluded_dataset_names = None
 
     def _get_datasets(self):
         url = f'https://catalog.newmexicowaterdata.org/api/3/action/package_show?id={self.resource_id}'
@@ -69,19 +70,27 @@ class CKANResourceSTAO(BaseSTAO):
             print(resp.url, resp.text)
             return []
 
-        return data['result']['resources']
-
-    def _extract(self, request):
+        resources =  data['result']['resources']
         dataset_names = self.dataset_names
         if dataset_names:
             if not isinstance(dataset_names, (list, tuple)):
                 dataset_names = (dataset_names,)
+        if dataset_names:
+            resources = [r for r in resources if r['name'] in dataset_names]
+
+        excluded_dataset_names = self.excluded_dataset_names
+        if excluded_dataset_names:
+            if callable(excluded_dataset_names):
+                resources = [r for r in resources if not excluded_dataset_names(r)]
+            else:
+                resources = [r for r in resources if r['name'] not in excluded_dataset_names]
+
+        return resources
+
+    def _extract(self, request):
 
         for dataset in self._get_datasets():
-            if dataset_names:
-                if dataset['name'] not in dataset_names:
-                    continue
-
+            print(dataset['name'])
             records = self._get_dataset_records(dataset)
             yield from self._extract_hook(dataset, records)
 
@@ -93,6 +102,7 @@ class CKANResourceSTAO(BaseSTAO):
     def _get_dataset(self, dataset, attr ='text'):
         url = dataset['url']
         resp = httpx.get(url, follow_redirects=True)
+        # print(resp.text)
         return getattr(resp, attr)
 
     def _get_dataset_records(self, dataset):

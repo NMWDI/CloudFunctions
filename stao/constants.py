@@ -45,6 +45,12 @@ ENCODING_PDF = "application/pdf"
 
 WATER_QUANTITY = 'Water Quantity'
 
+BUBBLER_SENSOR = {'name': 'Bubbler',
+                    'description': NO_DESCRIPTION,
+                    'encodingType': ENCODING_PDF,
+                    'metadata': NO_METADATA
+                    }
+
 MANUAL_SENSOR = {'name': 'Manual',
                  'description': NO_DESCRIPTION,
                  'encodingType': ENCODING_PDF,
@@ -80,6 +86,11 @@ VAN_ESSEN_SENSOR = {'name': 'VanEssenDiver',
                     'description': NO_DESCRIPTION,
                     'encodingType': ENCODING_PDF,
                     'metadata': NO_METADATA}
+
+TRANSDUCER_SENSOR = {'name': 'Transducer',
+                        'description': NO_DESCRIPTION,
+                        'encodingType': ENCODING_PDF,
+                        'metadata': NO_METADATA}
 
 GWL_DS = {'name': 'Groundwater Levels',
           'description': 'Measurement of groundwater depth in a water well, as measured below ground surface'}

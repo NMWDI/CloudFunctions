@@ -212,7 +212,8 @@ class CABQDatastreams(CABQSTAO):
 class CABQObservations(CABQSTAO, ObservationMixin):
     _attr = None
     _name = None
-    resource_name = 'Water Levels'
+    # resource_name = 'Water Levels'
+    dataset_names = 'Water Levels'
     def _extract_hook(self, resource, records):
         def key(r):
             return r['sys_loc_code']
@@ -267,8 +268,10 @@ if __name__ == '__main__':
 
     # c = CABQSensors()
     # c = CABQObservedProperties()
-    c = CABQDatastreams()
+    # c = CABQDatastreams()
     # c = CABQWaterElevations()
-    c.render(None)
+    c = CABQWaterDepths()
+    # c.render(None, dry=True)
+    c.render(None, dry=True)
 
 # ============= EOF =============================================
