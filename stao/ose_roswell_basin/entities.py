@@ -23,7 +23,7 @@ from sta.util import statime
 from stao.base_stao import BaseSTAO, ObservationMixin
 from stao.ckan_stao import CKANSTAO
 from stao.constants import NO_DESCRIPTION, ENCODING_GEOJSON, WATER_WELL, DTW_OBS_PROP, MANUAL_SENSOR, WATER_QUANTITY, \
-    GWL_DS
+    GWL_DS, MANUAL_GWL_DS
 from stao.util import make_geometry_point_from_latlon, asiotid
 
 # try:
@@ -105,9 +105,13 @@ class OSERoswellDatastreams(OSERoswellSTAO):
                 obsprop_id = asiotid(obsprop)
                 sensor_id = asiotid(sensor)
                 properties = {'agency': AGENCY,
-                              'topic': WATER_QUANTITY}
-                dtw = {'name': GWL_DS['name'],
-                       'description': GWL_DS['description'],
+                              'topic': WATER_QUANTITY,
+                              'is_continuous': False,
+                              'is_provisional': False,
+                              'collection_type': 'manual'}
+
+                dtw = {'name': MANUAL_GWL_DS['name'],
+                       'description': MANUAL_GWL_DS['description'],
                        'Thing': thing_id,
                        'ObservedProperty': obsprop_id,
                        'Sensor': sensor_id,
@@ -133,7 +137,7 @@ class OSERoswellObservations(OSERoswellSTAO, ObservationMixin):
         if loc:
             thing = self._client.get_thing(name=WATER_WELL['name'], location=loc['@iot.id'])
             if thing:
-                ds = self._client.get_datastream(name=GWL_DS['name'], thing=thing['@iot.id'])
+                ds = self._client.get_datastream(name=MANUAL_GWL_DS['name'], thing=thing['@iot.id'])
 
                 vs = []
                 components = ['phenomenonTime', 'resultTime', 'result']
@@ -186,8 +190,8 @@ if __name__ == '__main__':
                  ('FTSumner', '3fa1cd2c-be33-4bba-a65b-bbc786dcbd39'),
                  ('Hondo', 'ce18fbb9-296d-4b40-ba66-f81a061051ac'),)
 
-    # dry = False
     dry = False
+    # dry = True
     for name, rid in resources:
         # c = OSERoswellLocations()
         # c = OSERoswellThings()

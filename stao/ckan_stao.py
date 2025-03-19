@@ -49,10 +49,13 @@ class CKANSTAO(BaseSTAO):
         return record
 
     def _get_blob(self):
-        url = f'{self.ckan_url}datastore/dump/{self.resource_id}'
-        print(url)
+        url = f'https://catalog.newmexicowaterdata.org/api/3/action/resource_show?id={self.resource_id}'
+        # url = f'{self.ckan_url}datastore/dump/{self.resource_id}'
+        # print(url)
         resp = httpx.get(url)
-        print(resp)
+        # print(resp)
+        # print(resp.json())
+        resp = httpx.get(resp.json()['result']['url'])
         return resp.text
 
 
