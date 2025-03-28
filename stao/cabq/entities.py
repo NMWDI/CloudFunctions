@@ -15,6 +15,7 @@
 # ===============================================================================
 import csv
 import urllib.request
+from datetime import datetime
 from itertools import groupby
 
 import httpx
@@ -228,12 +229,12 @@ class CABQObservations(CABQSTAO, ObservationMixin):
             thing = self._client.get_thing(name='Water Well', location=loc['@iot.id'])
             if thing:
                 ds = self._client.get_datastream(name=self._name, thing=thing['@iot.id'])
-
                 vs = []
                 components = ['phenomenonTime', 'resultTime', 'result', 'parameters']
-                # print('thiasd', ds)
                 for obs in record['observations']:
-                    t = statime(obs['measurement_date'])
+                    ts = obs['measurement_date']
+                    ts = datetime.strptime(ts, '%m/%d/%Y  %H:%M')
+                    t = statime(ts.isoformat())
 
                     v = obs[self._attr]
                     parameters = {'measurement_method': obs['measurement_method'],
@@ -272,6 +273,7 @@ if __name__ == '__main__':
     # c = CABQWaterElevations()
     c = CABQWaterDepths()
     # c.render(None, dry=True)
-    c.render(None, dry=True)
+    # c.render(None, dry=True)
+    c.render(None, dry=False)
 
 # ============= EOF =============================================
